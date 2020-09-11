@@ -21,7 +21,7 @@ describe("POST /add-daily-report", () => {
             "Missing volume": await request.post("/add-daily-report").send({
                 temperature: "15"
             }),
-            "Invalid volume": invalidVolumeResponse = await request.post("/add-daily-report").send({
+            "Invalid volume": await request.post("/add-daily-report").send({
                 volume: "Not a number",
                 temperature: "15"
             })
@@ -37,7 +37,7 @@ describe("POST /add-daily-report", () => {
             "Missing temperature": await request.post("/add-daily-report").send({
                 volume: "100"
             }),
-            "Invalid temperature": invalidVolumeResponse = await request.post("/add-daily-report").send({
+            "Invalid temperature": await request.post("/add-daily-report").send({
                 volume: "100",
                 temperature: "Not a number"
             })
