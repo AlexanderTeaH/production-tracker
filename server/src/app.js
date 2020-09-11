@@ -10,17 +10,20 @@ app.use(bodyParser.urlencoded({extended: true }));
 // Routes
 app.post("/add-daily-report", (request, response) => {
     let volume = request.body.volume;
-    let density = request.body.density;
+    let temperature = request.body.temperature;
 
     if (!volume || isNaN(volume)) {
         response.status(400).json("Bad request");
     }
     
-    if (!density || isNaN(density)) {
+    if (!temperature || isNaN(temperature)) {
         response.status(400).json("Bad request");
     }
 
-    response.status(201).json(volume);
+    response.status(201).json({
+        volume: volume,
+        temperature: temperature
+    });
 });
 
 // Export express instance

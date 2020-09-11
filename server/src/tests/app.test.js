@@ -10,7 +10,7 @@ describe("POST /add-daily-report", () => {
     test("Adds report", async () => {
         let response = await request.post("/add-daily-report").send({
             volume: "100",
-            density: "1"
+            temperature: "15"
         });
 
         expect(response.statusCode).toBe(201);
@@ -19,11 +19,11 @@ describe("POST /add-daily-report", () => {
     test("Handles bad volume parameter", async () => {
         let responses = {
             "Missing volume": await request.post("/add-daily-report").send({
-                density: "1"
+                temperature: "15"
             }),
             "Invalid volume": invalidVolumeResponse = await request.post("/add-daily-report").send({
                 volume: "Not a number",
-                density: "1"
+                temperature: "15"
             })
         };
 
@@ -32,14 +32,14 @@ describe("POST /add-daily-report", () => {
         }
     });
 
-    test("Handles bad density parameter", async () => {
+    test("Handles bad temperature parameter", async () => {
         let responses = {
-            "Missing density": await request.post("/add-daily-report").send({
+            "Missing temperature": await request.post("/add-daily-report").send({
                 volume: "100"
             }),
-            "Invalid density": invalidVolumeResponse = await request.post("/add-daily-report").send({
+            "Invalid temperature": invalidVolumeResponse = await request.post("/add-daily-report").send({
                 volume: "100",
-                density: "Not a number"
+                temperature: "Not a number"
             })
         };
 
