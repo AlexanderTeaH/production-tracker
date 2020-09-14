@@ -4,8 +4,8 @@
     "description": "",
     "main": "app.js",
     "scripts": {
-        "start": "node src/start.js",
-        "dev": "nodemon src/start.js",
+        "start": "node start.js",
+        "dev": "nodemon start.js",
         "test": "jest",
         "test:watch": "jest --watch",
         "lint": "eslint ./** --fix"
@@ -14,14 +14,28 @@
     "license": "MIT",
     "dependencies": {
         "body-parser": "^1.19.0",
-        "express": "^4.17.1"
+        "dotenv": "^8.2.0",
+        "exceljs": "^4.1.1",
+        "express": "^4.17.1",
+        "mongoose": "^5.10.5",
+        "time-stamp": "^2.2.0"
     },
     "devDependencies": {
+        "@shelf/jest-mongodb": "^1.2.3",
         "eslint": "^7.8.1",
         "eslint-plugin-json": "^2.1.2",
         "jest": "^26.4.2",
         "nodemon": "^2.0.4",
         "supertest": "^4.0.2"
+    },
+    "jest": {
+        "testEnvironment": "node"
+    },
+    "config": {
+        "mongodbMemoryServer": {
+            "version": "latest",
+            "debug": "1"
+        }
     },
     "eslintConfig": {
         "root": true,
@@ -43,7 +57,7 @@
             "ecmaVersion": 2018
         },
         "plugins": [
-          "json"
+            "json"
         ],
         "rules": {
             "indent": [
