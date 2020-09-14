@@ -9,9 +9,16 @@ const mongoose = require("mongoose");
 // Require mongoose models
 const ProductionReport = require("../models/productionReport");
 
+// Make sure tests are not run on production database :O
+beforeAll(() => {
+    if (process.env.DATABASE_NAME !== "test") {
+        process.exit(1);
+    }
+});
+
 // Disconnect database after tests so that Jest exits
 afterAll(async () => {
-    mongoose.disconnect();
+    await mongoose.disconnect();
 });
 
 // Tests
