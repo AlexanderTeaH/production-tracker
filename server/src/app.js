@@ -13,18 +13,20 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 
-// Setup MongoDB Atlas connection using mongoose
-mongoose.connect(
-    "mongodb+srv://admin:" +
-    process.env.MONGO_DB_ATLAS_PASSWORD +
-    "@test-cluster.beami.mongodb.net/" +
-    process.env.DATABASE_NAME +
-    "?retryWrites=true&w=majority",
-    {
-        useNewUrlParser: true,
-        useUnifiedTopology: true
-    }
-);
+// Setup MongoDB Atlas connection using mongoose if Jest is not running
+if (process.env.JEST_WORKER_ID === undefined) {
+    mongoose.connect(
+        "mongodb+srv://admin:" +
+        process.env.MONGO_DB_ATLAS_PASSWORD +
+        "@test-cluster.beami.mongodb.net/" +
+        process.env.NODE_ENV +
+        "?retryWrites=true&w=majority",
+        {
+            useNewUrlParser: true,
+            useUnifiedTopology: true
+        }
+    );
+}
 
 // Require mongoose models
 const ProductionReport = require("./models/productionReport");
