@@ -17,7 +17,9 @@ app.use(bodyParser.urlencoded({extended: true}));
 mongoose.connect(
     "mongodb+srv://admin:" +
     process.env.MONGO_DB_ATLAS_PASSWORD +
-    "@test-cluster.beami.mongodb.net/test-database?retryWrites=true&w=majority",
+    "@test-cluster.beami.mongodb.net/" +
+    process.env.DATABASE_NAME +
+    "?retryWrites=true&w=majority",
     {
         useNewUrlParser: true,
         useUnifiedTopology: true
