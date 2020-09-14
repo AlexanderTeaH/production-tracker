@@ -31,12 +31,6 @@
     "jest": {
         "testEnvironment": "node"
     },
-    "config": {
-        "mongodbMemoryServer": {
-            "version": "latest",
-            "debug": "1"
-        }
-    },
     "eslintConfig": {
         "root": true,
         "env": {
