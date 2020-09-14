@@ -90,17 +90,14 @@ app.get("/generate-report", async (request, response) => {
     ];
 
     try {
-        const entries = await ProductionReport.find({}).exec();
+        const documents = await ProductionReport.find({}).exec();
 
-        for (let key in entries) {
-            let date = entries[key].date;
-            let formattedDate = `${date.getDate()}/${date.getMonth()}/${date.getFullYear()}`;
-
+        for (const document of documents) {
             worksheet.addRow({
-                date: formattedDate,
-                volume: entries[key].volume,
-                site: entries[key].site,
-                temperature: entries[key].temperature
+                date: `${document.date.getDate()}/${document.date.getMonth()}/${document.date.getFullYear()}`,
+                volume: document.volume,
+                site: document.site,
+                temperature: document.temperature
             });
         }
 
