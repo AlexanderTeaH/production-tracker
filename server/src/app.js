@@ -4,6 +4,7 @@ const bodyParser = require("body-parser");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 const excelJS = require("exceljs");
+const utils = require("./utils");
 
 // Configure environment variables
 dotenv.config();
@@ -33,136 +34,149 @@ const ProductionReport = require("./models/productionReport");
 
 // Routes
 app.post("/addSiteReport", async (request, response) => {
-    const date = parseDate(request.body.date);
-    const site = request.body.site;
-    const volume = request.body.volume;
+    const date        = utils.parseDate(request.body.date);
+    const site        = request.body.site;
+    const volume      = request.body.volume;
     const temperature = request.body.temperature;
 
     if (!date) {
-        response.status(400).json("Bad request");
+        response
+            .status(400)
+            .json("Bad request");
+        
         return;
     }
 
     if (!site) {
-        response.status(400).json("Bad request");
+        response
+            .status(400)
+            .json("Bad request");
+
         return;
     }
 
     if (!volume || isNaN(volume)) {
-        response.status(400).json("Bad request");
+        response
+            .status(400)
+            .json("Bad request");
+
         return;
     }
     
     if (!temperature || isNaN(temperature)) {
-        response.status(400).json("Bad request");
+        response
+            .status(400)
+            .json("Bad request");
+
         return;
     }
 
     const report = new ProductionReport({
-        _id: new mongoose.Types.ObjectId(),
-        date: date,
-        site: site,
-        volume: volume,
+        _id:         new mongoose.Types.ObjectId(),
+        date:        date,
+        site:        site,
+        volume:      volume,
         temperature: temperature
     });
 
     try {
         await report.save();
-        response.status(201).json({id: report.id});
+        response
+            .status(201)
+            .json({id: report.id});
     }
     
     catch (exception) {
         console.log(`Exception occured in "/addSiteReport": ${exception}`);
-        response.status(500).json("Internal server error");
+        response
+            .status(500)
+            .json("Internal server error");
     }
 });
 
 app.get("/siteReports/:id", async (request, response) => {
     try {
-        const document = await ProductionReport.findById(request.params.id).exec();
+        const document = await ProductionReport
+            .findById(request.params.id)
+            .exec();
 
         if (!document) {
-            response.status(404).json("Report doesn't exist");
+            response
+                .status(404)
+                .json("Report doesn't exist");
         }
         
         else {
-            response.status(200).json({
-                date: document.date.toISOString().split("T")[0],
-                site: document.site,
-                volume: document.volume,
-                temperature: document.temperature
-            });
+            response
+                .status(200)
+                .json({
+                    date:        document.date.toISOString().split("T")[0],
+                    site:        document.site,
+                    volume:      document.volume,
+                    temperature: document.temperature
+                });
         }
     }
 
     catch (exception) {
         if (exception instanceof mongoose.Error.CastError) {
-            response.status(404).json("Report doesn't exist");
+            response
+                .status(404)
+                .json("Report doesn't exist");
         }
         
         else {
-            response.status(500).json("Internal server error");
             console.log(`Error occured in "/siteReports/:id": ${exception}`);
+            response
+                .status(500)
+                .json("Internal server error");
         }
     }
 });
 
-const defaultStartDate = new Date(-8640000000000000);
-const defaultEndDate = new Date(8640000000000000);
-
 app.get("/generateReport", async (request, response) => {
-    const startDate = parseDate(request.body.startDate);
-    const endDate = parseDate(request.body.endDate);
-
-    const workbook = new excelJS.Workbook();
-    const worksheet = workbook.addWorksheet("Report");
-
-    worksheet.columns = [
-        {header: "Date", key: "date", width: 15, style: {numFmt: "m/d/yyyy"}},
-        {header: "Site", key: "site", width: 15},
-        {header: "Volume (m³)", key: "volume", width: 15},
-        {header: "Temperature (°C)", key: "temperature", width:15}
-    ];
-
     try {
+        const startDate = utils.parseDate(request.body.startDate) || new Date(-8640000000000000);
+        const endDate   = utils.parseDate(request.body.endDate)   || new Date(8640000000000000);
+
         const documents = await ProductionReport.where("date")
-            .gte(startDate || defaultStartDate)
-            .lte(endDate || defaultEndDate)
+            .gte(startDate)
+            .lte(endDate)
             .exec();
+        
+        const workbook  = new excelJS.Workbook();
+        const worksheet = workbook.addWorksheet("Report");
+
+        worksheet.columns = [
+            {header: "Date",             key: "date",        width: 15, style: {numFmt: "m/d/yyyy"}},
+            {header: "Site",             key: "site",        width: 15},
+            {header: "Volume (m³)",      key: "volume",      width: 15},
+            {header: "Temperature (°C)", key: "temperature", width: 15}
+        ];
 
         for (const document of documents) {
             worksheet.addRow({
-                date: document.date.toISOString().split("T")[0],
-                volume: document.volume,
-                site: document.site,
+                date:        document.date.toISOString().split("T")[0],
+                volume:      document.volume,
+                site:        document.site,
                 temperature: document.temperature
             });
         }
 
-        response.status(200).attachment("Report.xlsx");
+        response
+            .status(200)
+            .attachment("Report.xlsx");
+
         await workbook.xlsx.write(response);
     }
 
     catch (exception) {
         console.log(`Exception occured in "/generateReport": ${exception}`);
-        response.status(500).json("Internal server error");
+        response
+            .status(500)
+            .json("Internal server error");
     }
 });
-
-// Helper functions
-function parseDate(dateString) {
-    if (!dateString || !dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        return null;
-    }
-
-    const date = new Date(dateString);
-
-    if (isNaN(date.getTime())) {
-        return null;
-    }
-
-    return date;
-}
 
 // Export express instance
 module.exports = app;
