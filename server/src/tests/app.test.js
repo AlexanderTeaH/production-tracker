@@ -46,7 +46,7 @@ describe("POST /addSiteReport", () => {
     test("Adds report", async () => {
         const entry = {date: "2020-09-01", site: "X", volume: 1, temperature: 1};
         const response = await request.post("/addSiteReport").send(entry);
-        const mongooseQuery = (await ProductionReport.find(entry).exec());
+        const mongooseQuery = await ProductionReport.find(entry).exec();
 
         expect(response.statusCode).toBe(201);
         expect(mongooseQuery.length).toBe(1);
@@ -106,6 +106,20 @@ describe("POST /addSiteReport", () => {
         
         const mongooseQuery = (await ProductionReport.find({}).exec());
         expect(mongooseQuery.length).toBe(0);
+    });
+});
+
+describe("GET /siteReport/:id", () => {
+    test("Retrieves report", async () => {
+        const entry = {date: "2020-09-01", site: "X", volume: 1, temperature: 1};
+        const id = (await request.post("/addSiteReport").send(entry)).body.id;
+        const response = await request.get(`/siteReports/${id}`);
+        expect(response.body).toMatchObject(entry);
+    });
+
+    test("Handles bad id parameter", async () => {
+        const response = await request.get("/siteReports/invalidID");
+        expect(response.statusCode).toBe(404);
     });
 });
 

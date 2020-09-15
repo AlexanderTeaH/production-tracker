@@ -68,12 +68,42 @@ app.post("/addSiteReport", async (request, response) => {
 
     try {
         await report.save();
-        response.status(201).json("Report added");
+        response.status(201).json({id: report.id});
     }
     
     catch (exception) {
-        console.log(`Exception occured in "/add-daily-report": ${exception}`);
+        console.log(`Exception occured in "/addSiteReport": ${exception}`);
         response.status(500).json("Internal server error");
+    }
+});
+
+app.get("/siteReports/:id", async (request, response) => {
+    try {
+        const document = await ProductionReport.findById(request.params.id).exec();
+
+        if (!document) {
+            response.status(404).json("Report doesn't exist");
+        }
+        
+        else {
+            response.status(200).json({
+                date: document.date.toISOString().split("T")[0],
+                site: document.site,
+                volume: document.volume,
+                temperature: document.temperature
+            });
+        }
+    }
+
+    catch (exception) {
+        if (exception instanceof mongoose.Error.CastError) {
+            response.status(404).json("Report doesn't exist");
+        }
+        
+        else {
+            response.status(500).json("Internal server error");
+            console.log(`Error occured in "/siteReports/:id": ${exception}`);
+        }
     }
 });
 
@@ -114,7 +144,7 @@ app.get("/generateReport", async (request, response) => {
     }
 
     catch (exception) {
-        console.log(`Exception occured in "/generate-report": ${exception}`);
+        console.log(`Exception occured in "/generateReport": ${exception}`);
         response.status(500).json("Internal server error");
     }
 });
