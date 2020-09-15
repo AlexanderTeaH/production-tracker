@@ -33,12 +33,11 @@ const ProductionReport = require("./models/productionReport");
 
 // Routes
 app.post("/add-daily-report", async (request, response) => {
-    const date = request.body.date;
+    const date = parseDate(request.body.date);
     const site = request.body.site;
     const volume = request.body.volume;
     const temperature = request.body.temperature;
 
-    // TODO: Validate date input
     if (!date) {
         response.status(400).json("Bad request");
         return;
@@ -61,7 +60,7 @@ app.post("/add-daily-report", async (request, response) => {
 
     const report = new ProductionReport({
         _id: new mongoose.Types.ObjectId(),
-        date: date, // Change date to Lithuanian time
+        date: date,
         site: site,
         volume: volume,
         temperature: temperature
@@ -78,7 +77,13 @@ app.post("/add-daily-report", async (request, response) => {
     }
 });
 
+const defaultStartDate = new Date(-8640000000000000);
+const defaultEndDate = new Date(8640000000000000);
+
 app.get("/generate-report", async (request, response) => {
+    const startDate = parseDate(request.body.startDate);
+    const endDate = parseDate(request.body.endDate);
+
     const workbook = new excelJS.Workbook();
     const worksheet = workbook.addWorksheet("Report");
 
@@ -90,22 +95,21 @@ app.get("/generate-report", async (request, response) => {
     ];
 
     try {
-        const documents = await ProductionReport.find({}).exec();
+        const documents = await ProductionReport.where("date")
+            .gte(startDate || defaultStartDate)
+            .lte(endDate || defaultEndDate)
+            .exec();
 
         for (const document of documents) {
             worksheet.addRow({
-                date: `${document.date.getDate()}/${document.date.getMonth()}/${document.date.getFullYear()}`,
+                date: document.date.toISOString().split("T")[0],
                 volume: document.volume,
                 site: document.site,
                 temperature: document.temperature
             });
         }
 
-        response.set({
-            "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-            "Content-Disposition": "attachment; filename=Report.xlsx"
-        });
-    
+        response.status(200).attachment("Report.xlsx");
         await workbook.xlsx.write(response);
     }
 
@@ -114,6 +118,21 @@ app.get("/generate-report", async (request, response) => {
         response.status(500).json("Internal server error");
     }
 });
+
+// Helper functions
+function parseDate(dateString) {
+    if (!dateString || !dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return null;
+    }
+
+    const date = new Date(dateString);
+
+    if (isNaN(date.getTime())) {
+        return null;
+    }
+
+    return date;
+}
 
 // Export express instance
 module.exports = app;

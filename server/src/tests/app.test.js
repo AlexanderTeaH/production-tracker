@@ -5,6 +5,7 @@ const app = require("../app");
 const supertest = require("supertest");
 const request = supertest(app);
 const mongoose = require("mongoose");
+const excelJS = require("exceljs");
 
 // Require mongoose models
 const ProductionReport = require("../models/productionReport");
@@ -25,6 +26,8 @@ beforeAll(async () => {
                 useUnifiedTopology: true
             }
         );
+
+        await mongoose.connection.db.dropDatabase();
     }
 });
 
@@ -41,101 +44,89 @@ afterAll(async () => {
 // Tests
 describe("POST /add-daily-report", () => {
     test("Adds report", async () => {
-        const entry = {
-            date: new Date(),
-            site: "Site",
-            volume: 1,
-            temperature: 1
-        };
-
-        let response = await request.post("/add-daily-report").send(entry);
-        let mongooseQuery = (await ProductionReport.find(entry).exec());
+        const entry = {date: "2020-09-01", site: "X", volume: 1, temperature: 1};
+        const response = await request.post("/add-daily-report").send(entry);
+        const mongooseQuery = (await ProductionReport.find(entry).exec());
 
         expect(response.statusCode).toBe(201);
         expect(mongooseQuery.length).toBe(1);
     });
 
     test("Handles bad date parameter", async () => {
-        let responses = [
-            await request.post("/add-daily-report").send({
-                site: "Site",
-                volume: 1,
-                temperature: 1
-            })
-        ];
+        const responses = await Promise.all([
+            request.post("/add-daily-report").send({site: "X", volume: 1, temperature: 1}),
+            request.post("/add-daily-report").send({date: "2020-09-300", site: "X", volume: 1, temperature: 1}),
+            request.post("/add-daily-report").send({date: "Not a date", site: "X", volume: 1, temperature: 1})
+        ]);
         
-        let mongooseQuery = (await ProductionReport.find({}).exec());
-
         for (const response of responses) {
             expect(response.statusCode).toBe(400);
         }
-
+        
+        const mongooseQuery = await ProductionReport.find({}).exec();
         expect(mongooseQuery.length).toBe(0);
     });
 
     test("Handles bad site parameter", async () => {
-        let responses = [
-            await request.post("/add-daily-report").send({
-                date: new Date(),
-                volume: 1,
-                temperature: 1
-            })
-        ];
-
-        let mongooseQuery = (await ProductionReport.find({}).exec());
-
+        const responses = await Promise.all([
+            request.post("/add-daily-report").send({date: "2020-09-01", volume: 1, temperature: 1})
+        ]);
+        
         for (const response of responses) {
             expect(response.statusCode).toBe(400);
         }
-
+        
+        const mongooseQuery = (await ProductionReport.find({}).exec());
         expect(mongooseQuery.length).toBe(0);
     });
 
     test("Handles bad volume parameter", async () => {
-        let responses = [
-            await request.post("/add-daily-report").send({
-                date: new Date(),
-                site: "Test Site",
-                temperature: "15"
-            }),
-            await request.post("/add-daily-report").send({
-                date: new Date(),
-                site: "Test Site",
-                volume: "Not a number",
-                temperature: "15"
-            })
-        ];
-
-        let mongooseQuery = (await ProductionReport.find({}).exec());
+        const responses = await Promise.all([
+            request.post("/add-daily-report").send({date: "2020-09-01", site: "X", temperature: 15}),
+            request.post("/add-daily-report").send({date: new Date(), site: "X", volume: "Not a number", temperature: 15})
+        ]);
 
         for (const response of responses) {
             expect(response.statusCode).toBe(400);
         }
-
+        
+        const mongooseQuery = (await ProductionReport.find({}).exec());
         expect(mongooseQuery.length).toBe(0);
     });
 
     test("Handles bad temperature parameter", async () => {
-        let responses = [
-            await request.post("/add-daily-report").send({
-                date: new Date(),
-                site: "Test Site",
-                volume: "100"
-            }),
-            await request.post("/add-daily-report").send({
-                date: new Date(),
-                site: "Test Site",
-                volume: "100",
-                temperature: "Not a number"
-            })
-        ];
-
-        let mongooseQuery = (await ProductionReport.find({}).exec());
+        const responses = await Promise.all([
+            request.post("/add-daily-report").send({date: "2020-09-01", site: "Test Site", volume: 1}),
+            request.post("/add-daily-report").send({date: "2020-09-01", site: "X", volume: 1, temperature: "Not a number"})
+        ]);
 
         for (const response of responses) {
             expect(response.statusCode).toBe(400);
         }
-
+        
+        const mongooseQuery = (await ProductionReport.find({}).exec());
         expect(mongooseQuery.length).toBe(0);
     });
 });
+
+// Still need to figure out how to write a test for this
+// describe("GET /generate-report", () => {
+//     test("Generates reports correctly", async () => {
+//         await Promise.all([
+//             request.post("/add-daily-report").send({date: "2020-09-01", site: "X", volume: 1, temperature: 1}),
+//             request.post("/add-daily-report").send({date: "2020-09-02", site: "X", volume: 1, temperature: 1}),
+//             request.post("/add-daily-report").send({date: "2020-09-03", site: "X", volume: 1, temperature: 1}),
+//             request.post("/add-daily-report").send({date: "2020-09-04", site: "X", volume: 1, temperature: 1})
+//         ]);
+
+//         const response = await request.get("/generate-report");
+//         const workbook = new excelJS.Workbook();
+//         await workbook.xlsx.load(response.text);
+        
+//         workbook.eachSheet(function(worksheet, sheetId) {
+//             console.log(worksheet.name);
+//         });
+
+//         expect(true).toBe(true);
+//     });
+// });
