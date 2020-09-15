@@ -32,7 +32,7 @@ if (process.env.JEST_WORKER_ID === undefined) {
 const ProductionReport = require("./models/productionReport");
 
 // Routes
-app.post("/add-daily-report", async (request, response) => {
+app.post("/addSiteReport", async (request, response) => {
     const date = parseDate(request.body.date);
     const site = request.body.site;
     const volume = request.body.volume;
@@ -80,7 +80,7 @@ app.post("/add-daily-report", async (request, response) => {
 const defaultStartDate = new Date(-8640000000000000);
 const defaultEndDate = new Date(8640000000000000);
 
-app.get("/generate-report", async (request, response) => {
+app.get("/generateReport", async (request, response) => {
     const startDate = parseDate(request.body.startDate);
     const endDate = parseDate(request.body.endDate);
 

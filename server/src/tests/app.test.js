@@ -42,10 +42,10 @@ afterAll(async () => {
 });
 
 // Tests
-describe("POST /add-daily-report", () => {
+describe("POST /addSiteReport", () => {
     test("Adds report", async () => {
         const entry = {date: "2020-09-01", site: "X", volume: 1, temperature: 1};
-        const response = await request.post("/add-daily-report").send(entry);
+        const response = await request.post("/addSiteReport").send(entry);
         const mongooseQuery = (await ProductionReport.find(entry).exec());
 
         expect(response.statusCode).toBe(201);
@@ -54,9 +54,9 @@ describe("POST /add-daily-report", () => {
 
     test("Handles bad date parameter", async () => {
         const responses = await Promise.all([
-            request.post("/add-daily-report").send({site: "X", volume: 1, temperature: 1}),
-            request.post("/add-daily-report").send({date: "2020-09-300", site: "X", volume: 1, temperature: 1}),
-            request.post("/add-daily-report").send({date: "Not a date", site: "X", volume: 1, temperature: 1})
+            request.post("/addSiteReport").send({site: "X", volume: 1, temperature: 1}),
+            request.post("/addSiteReport").send({date: "2020-09-300", site: "X", volume: 1, temperature: 1}),
+            request.post("/addSiteReport").send({date: "Not a date", site: "X", volume: 1, temperature: 1})
         ]);
         
         for (const response of responses) {
@@ -69,7 +69,7 @@ describe("POST /add-daily-report", () => {
 
     test("Handles bad site parameter", async () => {
         const responses = await Promise.all([
-            request.post("/add-daily-report").send({date: "2020-09-01", volume: 1, temperature: 1})
+            request.post("/addSiteReport").send({date: "2020-09-01", volume: 1, temperature: 1})
         ]);
         
         for (const response of responses) {
@@ -82,8 +82,8 @@ describe("POST /add-daily-report", () => {
 
     test("Handles bad volume parameter", async () => {
         const responses = await Promise.all([
-            request.post("/add-daily-report").send({date: "2020-09-01", site: "X", temperature: 15}),
-            request.post("/add-daily-report").send({date: new Date(), site: "X", volume: "Not a number", temperature: 15})
+            request.post("/addSiteReport").send({date: "2020-09-01", site: "X", temperature: 15}),
+            request.post("/addSiteReport").send({date: new Date(), site: "X", volume: "Not a number", temperature: 15})
         ]);
 
         for (const response of responses) {
@@ -96,8 +96,8 @@ describe("POST /add-daily-report", () => {
 
     test("Handles bad temperature parameter", async () => {
         const responses = await Promise.all([
-            request.post("/add-daily-report").send({date: "2020-09-01", site: "Test Site", volume: 1}),
-            request.post("/add-daily-report").send({date: "2020-09-01", site: "X", volume: 1, temperature: "Not a number"})
+            request.post("/addSiteReport").send({date: "2020-09-01", site: "Test Site", volume: 1}),
+            request.post("/addSiteReport").send({date: "2020-09-01", site: "X", volume: 1, temperature: "Not a number"})
         ]);
 
         for (const response of responses) {
@@ -110,16 +110,16 @@ describe("POST /add-daily-report", () => {
 });
 
 // Still need to figure out how to write a test for this
-// describe("GET /generate-report", () => {
+// describe("GET /generateReport", () => {
 //     test("Generates reports correctly", async () => {
 //         await Promise.all([
-//             request.post("/add-daily-report").send({date: "2020-09-01", site: "X", volume: 1, temperature: 1}),
-//             request.post("/add-daily-report").send({date: "2020-09-02", site: "X", volume: 1, temperature: 1}),
-//             request.post("/add-daily-report").send({date: "2020-09-03", site: "X", volume: 1, temperature: 1}),
-//             request.post("/add-daily-report").send({date: "2020-09-04", site: "X", volume: 1, temperature: 1})
+//             request.post("/addSiteReport").send({date: "2020-09-01", site: "X", volume: 1, temperature: 1}),
+//             request.post("/addSiteReport").send({date: "2020-09-02", site: "X", volume: 1, temperature: 1}),
+//             request.post("/addSiteReport").send({date: "2020-09-03", site: "X", volume: 1, temperature: 1}),
+//             request.post("/addSiteReport").send({date: "2020-09-04", site: "X", volume: 1, temperature: 1})
 //         ]);
 
-//         const response = await request.get("/generate-report");
+//         const response = await request.get("/generateReport");
 //         const workbook = new excelJS.Workbook();
 //         await workbook.xlsx.load(response.text);
         
