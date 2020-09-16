@@ -1,11 +1,22 @@
 const mongoose = require("mongoose");
 
 const productionReportSchema = mongoose.Schema({
-    _id: mongoose.Schema.Types.ObjectId,
-    date: Date,
-    site: String,
-    volume: Number,
-    temperature: Number
+    date: {
+        type: Date,
+        required: true
+    },
+    site: {
+        type: String,
+        required: true
+    },
+    volume: {
+        type: Number,
+        required: true
+    },
+    temperature: {
+        type: Number,
+        required: true
+    }
 });
 
 module.exports = mongoose.model("ProductionReport", productionReportSchema, "production-reports");

@@ -34,52 +34,14 @@ const ProductionReport = require("./models/productionReport");
 
 // Routes
 app.post("/addSiteReport", async (request, response) => {
-    const date        = utils.parseDate(request.body.date);
-    const site        = request.body.site;
-    const volume      = request.body.volume;
-    const temperature = request.body.temperature;
-
-    if (!date) {
-        response
-            .status(400)
-            .json("Bad request");
-        
-        return;
-    }
-
-    if (!site) {
-        response
-            .status(400)
-            .json("Bad request");
-
-        return;
-    }
-
-    if (!volume || isNaN(volume)) {
-        response
-            .status(400)
-            .json("Bad request");
-
-        return;
-    }
-    
-    if (!temperature || isNaN(temperature)) {
-        response
-            .status(400)
-            .json("Bad request");
-
-        return;
-    }
-
-    const report = new ProductionReport({
-        _id:         new mongoose.Types.ObjectId(),
-        date:        date,
-        site:        site,
-        volume:      volume,
-        temperature: temperature
-    });
-
     try {
+        const report = new ProductionReport({
+            date:        utils.parseDate(request.body.date),
+            site:        request.body.site,
+            volume:      request.body.volume,
+            temperature: request.body.temperature
+        });
+        
         await report.save();
         response
             .status(201)
@@ -87,10 +49,18 @@ app.post("/addSiteReport", async (request, response) => {
     }
     
     catch (exception) {
-        console.log(`Exception occured in "/addSiteReport": ${exception}`);
-        response
-            .status(500)
-            .json("Internal server error");
+        if (exception instanceof mongoose.Error.ValidationError) {
+            response
+                .status(400)
+                .json("Bad request");
+        }
+
+        else {
+            console.log(`Exception occured in "/addSiteReport": ${exception}`);
+            response
+                .status(500)
+                .json("Internal server error");
+        }
     }
 });
 
@@ -148,7 +118,7 @@ app.get("/generateReport", async (request, response) => {
         const worksheet = workbook.addWorksheet("Report");
 
         worksheet.columns = [
-            {header: "Date",             key: "date",        width: 15, style: {numFmt: "m/d/yyyy"}},
+            {header: "Date",             key: "date",        width: 15},
             {header: "Site",             key: "site",        width: 15},
             {header: "Volume (m³)",      key: "volume",      width: 15},
             {header: "Temperature (°C)", key: "temperature", width: 15}
