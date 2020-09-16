@@ -45,21 +45,30 @@ app.post("/addSiteReport", async (request, response) => {
         await report.save();
         response
             .status(201)
-            .json({id: report.id});
+            .json({
+                message: "Added site report",
+                report: {
+                    id:          report.id,
+                    date:        report.date.toISOString().split("T")[0],
+                    site:        report.site,
+                    volume:      report.volume,
+                    temperature: report.temperature
+                }
+            });
     }
     
     catch (exception) {
         if (exception instanceof mongoose.Error.ValidationError) {
             response
                 .status(400)
-                .json("Bad request");
+                .json({message: "Bad request"});
         }
 
         else {
             console.log(`Exception occured in "/addSiteReport": ${exception}`);
             response
                 .status(500)
-                .json("Internal server error");
+                .json({message: "Internal server error"});
         }
     }
 });
@@ -73,17 +82,21 @@ app.get("/siteReports/:id", async (request, response) => {
         if (!document) {
             response
                 .status(404)
-                .json("Report doesn't exist");
+                .json({message: "Report doesn't exist"});
         }
         
         else {
             response
                 .status(200)
                 .json({
-                    date:        document.date.toISOString().split("T")[0],
-                    site:        document.site,
-                    volume:      document.volume,
-                    temperature: document.temperature
+                    message: "Found report",
+                    report: {
+                        id:          document.id,
+                        date:        document.date.toISOString().split("T")[0],
+                        site:        document.site,
+                        volume:      document.volume,
+                        temperature: document.temperature
+                    }
                 });
         }
     }
@@ -92,14 +105,14 @@ app.get("/siteReports/:id", async (request, response) => {
         if (exception instanceof mongoose.Error.CastError) {
             response
                 .status(404)
-                .json("Report doesn't exist");
+                .json({message: "Report doesn't exist"});
         }
         
         else {
             console.log(`Error occured in "/siteReports/:id": ${exception}`);
             response
                 .status(500)
-                .json("Internal server error");
+                .json({message: "Internal server error"});
         }
     }
 });
@@ -135,6 +148,7 @@ app.get("/generateReport", async (request, response) => {
 
         response
             .status(200)
+            .json({message: "Generated report"})
             .attachment("Report.xlsx");
 
         await workbook.xlsx.write(response);
@@ -144,7 +158,7 @@ app.get("/generateReport", async (request, response) => {
         console.log(`Exception occured in "/generateReport": ${exception}`);
         response
             .status(500)
-            .json("Internal server error");
+            .json({message: "Internal server error"});
     }
 });
 

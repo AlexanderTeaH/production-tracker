@@ -5,7 +5,7 @@ const app = require("../app");
 const supertest = require("supertest");
 const request = supertest(app);
 const mongoose = require("mongoose");
-const excelJS = require("exceljs");
+//const excelJS = require("exceljs");
 
 // Require mongoose models
 const ProductionReport = require("../models/productionReport");
@@ -46,9 +46,11 @@ describe("POST /addSiteReport", () => {
     test("Adds report", async () => {
         const entry = {date: "2020-09-01", site: "X", volume: 1, temperature: 1};
         const response = await request.post("/addSiteReport").send(entry);
-        const mongooseQuery = await ProductionReport.find(entry).exec();
-
         expect(response.statusCode).toBe(201);
+        expect(response.body.message).toBe("Added site report");
+        expect(response.body.report).toMatchObject(entry);
+        
+        const mongooseQuery = await ProductionReport.find(entry).exec();
         expect(mongooseQuery.length).toBe(1);
     });
 
@@ -61,9 +63,10 @@ describe("POST /addSiteReport", () => {
         
         for (const response of responses) {
             expect(response.statusCode).toBe(400);
+            expect(response.body.message).toBe("Bad request");
         }
         
-        const mongooseQuery = await ProductionReport.find({}).exec();
+        const mongooseQuery = await ProductionReport.find().exec();
         expect(mongooseQuery.length).toBe(0);
     });
 
@@ -74,9 +77,10 @@ describe("POST /addSiteReport", () => {
         
         for (const response of responses) {
             expect(response.statusCode).toBe(400);
+            expect(response.body.message).toBe("Bad request");
         }
         
-        const mongooseQuery = (await ProductionReport.find({}).exec());
+        const mongooseQuery = (await ProductionReport.find().exec());
         expect(mongooseQuery.length).toBe(0);
     });
 
@@ -88,9 +92,10 @@ describe("POST /addSiteReport", () => {
 
         for (const response of responses) {
             expect(response.statusCode).toBe(400);
+            expect(response.body.message).toBe("Bad request");
         }
         
-        const mongooseQuery = (await ProductionReport.find({}).exec());
+        const mongooseQuery = (await ProductionReport.find().exec());
         expect(mongooseQuery.length).toBe(0);
     });
 
@@ -102,24 +107,27 @@ describe("POST /addSiteReport", () => {
 
         for (const response of responses) {
             expect(response.statusCode).toBe(400);
+            expect(response.body.message).toBe("Bad request");
         }
         
-        const mongooseQuery = (await ProductionReport.find({}).exec());
+        const mongooseQuery = (await ProductionReport.find().exec());
         expect(mongooseQuery.length).toBe(0);
     });
 });
 
-describe("GET /siteReport/:id", () => {
+describe("GET /siteReports/:id", () => {
     test("Retrieves report", async () => {
         const entry = {date: "2020-09-01", site: "X", volume: 1, temperature: 1};
-        const id = (await request.post("/addSiteReport").send(entry)).body.id;
+        const id = (await request.post("/addSiteReport").send(entry)).body.report.id;
         const response = await request.get(`/siteReports/${id}`);
-        expect(response.body).toMatchObject(entry);
+        expect(response.body.message).toBe("Found report");
+        expect(response.body.report).toMatchObject(entry);
     });
 
     test("Handles bad id parameter", async () => {
         const response = await request.get("/siteReports/invalidID");
         expect(response.statusCode).toBe(404);
+        expect(response.body.message).toBe("Report doesn't exist");
     });
 });
 
