@@ -57,15 +57,15 @@ app.post("/addSiteReport", async (request, response) => {
             });
     }
     
-    catch (exception) {
-        if (exception instanceof mongoose.Error.ValidationError) {
+    catch (error) {
+        if (error instanceof mongoose.Error.ValidationError) {
             response
                 .status(400)
                 .json({message: "Bad request"});
         }
 
         else {
-            console.log(`Exception occured in "/addSiteReport": ${exception}`);
+            console.log(`Error occured in "/addSiteReport": ${error}`);
             response
                 .status(500)
                 .json({message: "Internal server error"});
@@ -101,15 +101,15 @@ app.get("/siteReports/:id", async (request, response) => {
         }
     }
 
-    catch (exception) {
-        if (exception instanceof mongoose.Error.CastError) {
+    catch (error) {
+        if (error instanceof mongoose.Error.CastError) {
             response
                 .status(404)
                 .json({message: "Report doesn't exist"});
         }
         
         else {
-            console.log(`Error occured in "/siteReports/:id": ${exception}`);
+            console.log(`Error occured in "/siteReports/:id": ${error}`);
             response
                 .status(500)
                 .json({message: "Internal server error"});
@@ -154,8 +154,8 @@ app.get("/generateReport", async (request, response) => {
         await workbook.xlsx.write(response);
     }
 
-    catch (exception) {
-        console.log(`Exception occured in "/generateReport": ${exception}`);
+    catch (error) {
+        console.log(`Error occured in "/generateReport": ${error}`);
         response
             .status(500)
             .json({message: "Internal server error"});
