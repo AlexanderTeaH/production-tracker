@@ -20,7 +20,7 @@
                                 full-width
                             ></v-date-picker>
                         </v-col>
-                        <v-col align="right">
+                        <v-col>
                             <v-select
                                 :items="sites"
                                 v-model="site"
@@ -43,12 +43,15 @@
                                 outlined
                                 required
                             ></v-text-field>
-                            <v-btn
-                                x-large
-                                color="primary"
-                                @click="submit"
-                            >Send report</v-btn>
                         </v-col>
+                    </v-row>
+                    <v-row>
+                        <v-btn
+                            x-large
+                            color="primary"
+                            block
+                            @click="submit"
+                        >Send report</v-btn>
                     </v-row>
                 </v-container>
             </v-form>
