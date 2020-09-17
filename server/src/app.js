@@ -1,10 +1,11 @@
 // Require modules
-const express = require("express");
+const express    = require("express");
 const bodyParser = require("body-parser");
-const dotenv = require("dotenv");
-const mongoose = require("mongoose");
-const excelJS = require("exceljs");
-const utils = require("./utils");
+const cors       = require("cors");
+const dotenv     = require("dotenv");
+const mongoose   = require("mongoose");
+const excelJS    = require("exceljs");
+const utils      = require("./utils");
 
 // Configure environment variables
 dotenv.config();
@@ -13,6 +14,7 @@ dotenv.config();
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(cors({origin: "*"}));
 
 // Setup MongoDB Atlas connection using mongoose if Jest is not running
 if (process.env.JEST_WORKER_ID === undefined) {
@@ -148,7 +150,6 @@ app.get("/generateReport", async (request, response) => {
 
         response
             .status(200)
-            .json({message: "Generated report"})
             .attachment("Report.xlsx");
 
         await workbook.xlsx.write(response);
