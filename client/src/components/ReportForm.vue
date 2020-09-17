@@ -20,7 +20,7 @@
                                 full-width
                             ></v-date-picker>
                         </v-col>
-                        <v-col>
+                        <v-col align="right">
                             <v-select
                                 :items="sites"
                                 v-model="site"
@@ -57,6 +57,8 @@
 </template>
 
 <script>
+import axios from "axios";
+
 export default {
     name: "ReportForm",
     data: () => ({
@@ -70,7 +72,6 @@ export default {
     }),
     methods: {
         async submit() {
-            const axios    = require("axios");
             const response = await axios
                 .post("http://127.0.0.1:80/addSiteReport", {
                     date:        this.date,
@@ -79,7 +80,7 @@ export default {
                     temperature: this.temperature
                 });
 
-            console.log(response);
+            console.log(response.data);
         }
     }
 };
