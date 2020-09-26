@@ -1,17 +1,11 @@
-// File to test
-const app = require("../app");
-
-// Require modules
+const app       = require("../app");
 const supertest = require("supertest");
-const request = supertest(app);
-const mongoose = require("mongoose");
-//const excelJS = require("exceljs");
+const request   = supertest(app);
+const mongoose  = require("mongoose");
 
-// Require mongoose models
 const OilTanksReport   = require("../models/reports/oilTanksReport");
 const WaterTanksReport = require("../models/reports/waterTanksReport");
 
-// Make sure tests are not run on production database :O
 beforeAll(async () => {
     if (process.env.NODE_ENV !== "test") {
         process.exit(1);
@@ -31,17 +25,14 @@ beforeAll(async () => {
     }
 });
 
-// Clear database after each test
 afterEach(async () => {
     await mongoose.connection.db.dropDatabase();
 });
 
-// Disconnect database after tests so that Jest exits
 afterAll(async () => {
     await mongoose.disconnect();
 });
 
-// Tests
 describe("POST /reports/oilTanks", () => {
     test("Adds report", async () => {
         const validEntry    = { site: "X", level: 1, volume: 1, temperature: 1, density: 1, weight: 1 };
@@ -195,25 +186,3 @@ describe("GET /reports/waterTanks/:id", () => {
         expect(response.body.message).toBe("Report doesn't exist");
     });
 });
-
-// Still need to figure out how to write a test for this
-// describe("GET /generateReport", () => {
-//     test("Generates reports correctly", async () => {
-//         await Promise.all([
-//             request.post("/addSiteReport").send({date: "2020-09-01", site: "X", volume: 1, temperature: 1}),
-//             request.post("/addSiteReport").send({date: "2020-09-02", site: "X", volume: 1, temperature: 1}),
-//             request.post("/addSiteReport").send({date: "2020-09-03", site: "X", volume: 1, temperature: 1}),
-//             request.post("/addSiteReport").send({date: "2020-09-04", site: "X", volume: 1, temperature: 1})
-//         ]);
-
-//         const response = await request.get("/generateReport");
-//         const workbook = new excelJS.Workbook();
-//         await workbook.xlsx.load(response.text);
-        
-//         workbook.eachSheet(function(worksheet, sheetId) {
-//             console.log(worksheet.name);
-//         });
-
-//         expect(true).toBe(true);
-//     });
-// });

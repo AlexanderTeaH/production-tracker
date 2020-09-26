@@ -1,16 +1,10 @@
-// Require modules
-const express  = require("express");
+const router   = require("express").Router();
 const mongoose = require("mongoose");
 const utils    = require("../utils");
 
-// Require mongoose models
 const OilTanksReport   = require("../models/reports/oilTanksReport");
 const WaterTanksReport = require("../models/reports/waterTanksReport");
 
-// Intitialize express router instance
-const router = express.Router();
-
-// Routes
 router.post("/oilTanks", async (request, response) => {
     try {
         const report = new OilTanksReport(utils.parseDocument(OilTanksReport.schema, request.body));
@@ -143,5 +137,4 @@ router.get("/waterTanks/:id", async (request, response) => {
     }
 });
 
-// Export router instance
 module.exports = router;
