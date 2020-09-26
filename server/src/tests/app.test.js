@@ -85,9 +85,8 @@ describe("POST /reports/oilTanks", () => {
 
             if (!isNaN(ommited)) {
                 rest[ommited] = "Not a number";
+                requests.push(request.post("/reports/oilTanks").send(rest));
             }
-
-            requests.push(request.post("/reports/oilTanks").send(rest));
         }
 
         const responses     = await Promise.all(requests);
@@ -163,9 +162,8 @@ describe("POST /reports/waterTanks", () => {
 
             if (!isNaN(ommited)) {
                 rest[ommited] = "Not a number";
+                requests.push(request.post("/reports/waterTanks").send(rest));
             }
-
-            requests.push(request.post("/reports/waterTanks").send(rest));
         }
 
         const responses     = await Promise.all(requests);
