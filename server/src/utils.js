@@ -12,12 +12,12 @@ module.exports.parseDate = (dateString) => {
     return date;
 };
 
-module.exports.parseDocument = (schema, requestBody) => {
+module.exports.parseDocument = (schema, json) => {
     let document = {};
 
     for (const property in schema.paths) {
         if (!["_id", "__v", "createdAt", "updatedAt"].includes(property)) {
-            document[property] = requestBody[property];
+            document[property] = json[property];
         }
     }
 
@@ -25,16 +25,16 @@ module.exports.parseDocument = (schema, requestBody) => {
 };
 
 module.exports.documentToJSON = (document) => {
-    let summary = {
+    let json = {
         id:        document.id,
         createdAt: document.createdAt
     };
 
     for (const property in document.schema.paths) {
         if (!["_id", "__v", "createdAt", "updatedAt"].includes(property)) {
-            summary[property] = document[property];
+            json[property] = document[property];
         }
     }
 
-    return summary;
+    return json;
 };
