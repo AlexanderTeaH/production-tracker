@@ -19,8 +19,7 @@ beforeAll(async () => {
 
     else {
         await mongoose.connect(
-            "mongodb+srv://admin:" +
-            process.env.MONGO_DB_ATLAS_PASSWORD +
+            "mongodb+srv://admin:" + process.env.MONGO_DB_ATLAS_PASSWORD +
             "@test-cluster.beami.mongodb.net/test?retryWrites=true&w=majority",
             {
                 useNewUrlParser: true,
@@ -103,8 +102,8 @@ describe("POST /reports/oilTanks", () => {
 
 describe("GET /reports/oilTanks/:id", () => {
     test("Retrieves report", async () => {
-        const entry = { site: "X", level: 1, volume: 1, temperature: 1, density: 1, weight: 1 };
-        const id = (await request.post("/reports/oilTanks").send(entry)).body.report.id;
+        const entry    = { site: "X", level: 1, volume: 1, temperature: 1, density: 1, weight: 1 };
+        const id       = (await request.post("/reports/oilTanks").send(entry)).body.report.id;
         const response = await request.get(`/reports/oilTanks/${id}`);
 
         expect(response.statusCode).toBe(200);
@@ -180,8 +179,8 @@ describe("POST /reports/waterTanks", () => {
 
 describe("GET /reports/waterTanks/:id", () => {
     test("Retrieves report", async () => {
-        const entry = { site: "X", level: 1, volume: 1, density: 1, weight: 1 };
-        const id = (await request.post("/reports/waterTanks").send(entry)).body.report.id;
+        const entry    = { site: "X", level: 1, volume: 1, density: 1, weight: 1 };
+        const id       = (await request.post("/reports/waterTanks").send(entry)).body.report.id;
         const response = await request.get(`/reports/waterTanks/${id}`);
 
         expect(response.statusCode).toBe(200);
