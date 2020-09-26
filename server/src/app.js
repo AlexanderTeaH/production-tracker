@@ -15,17 +15,16 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cors({origin: "*"}));
+app.use("/reports", require("./routes/reports"));
 
 // Setup MongoDB Atlas connection using mongoose if Jest is not running
 if (process.env.JEST_WORKER_ID === undefined) {
     mongoose.connect(
-        "mongodb+srv://admin:" +
-        process.env.MONGO_DB_ATLAS_PASSWORD +
-        "@test-cluster.beami.mongodb.net/" +
-        process.env.NODE_ENV +
+        "mongodb+srv://admin:"             + process.env.MONGO_DB_ATLAS_PASSWORD +
+        "@test-cluster.beami.mongodb.net/" + process.env.NODE_ENV +
         "?retryWrites=true&w=majority",
         {
-            useNewUrlParser: true,
+            useNewUrlParser:    true,
             useUnifiedTopology: true
         }
     );
@@ -35,90 +34,6 @@ if (process.env.JEST_WORKER_ID === undefined) {
 const ProductionReport = require("./models/productionReport");
 
 // Routes
-app.post("/addSiteReport", async (request, response) => {
-    try {
-        const report = new ProductionReport({
-            date:        utils.parseDate(request.body.date),
-            site:        request.body.site,
-            volume:      request.body.volume,
-            temperature: request.body.temperature
-        });
-        
-        await report.save();
-        response
-            .status(201)
-            .json({
-                message: "Added site report",
-                report: {
-                    id:          report.id,
-                    date:        report.date.toISOString().split("T")[0],
-                    site:        report.site,
-                    volume:      report.volume,
-                    temperature: report.temperature
-                }
-            });
-    }
-    
-    catch (error) {
-        if (error instanceof mongoose.Error.ValidationError) {
-            response
-                .status(400)
-                .json({message: "Bad request"});
-        }
-
-        else {
-            console.log(`Error occured in "/addSiteReport": ${error}`);
-            response
-                .status(500)
-                .json({message: "Internal server error"});
-        }
-    }
-});
-
-app.get("/siteReports/:id", async (request, response) => {
-    try {
-        const document = await ProductionReport
-            .findById(request.params.id)
-            .exec();
-
-        if (!document) {
-            response
-                .status(404)
-                .json({message: "Report doesn't exist"});
-        }
-        
-        else {
-            response
-                .status(200)
-                .json({
-                    message: "Found report",
-                    report: {
-                        id:          document.id,
-                        date:        document.date.toISOString().split("T")[0],
-                        site:        document.site,
-                        volume:      document.volume,
-                        temperature: document.temperature
-                    }
-                });
-        }
-    }
-
-    catch (error) {
-        if (error instanceof mongoose.Error.CastError) {
-            response
-                .status(404)
-                .json({message: "Report doesn't exist"});
-        }
-        
-        else {
-            console.log(`Error occured in "/siteReports/:id": ${error}`);
-            response
-                .status(500)
-                .json({message: "Internal server error"});
-        }
-    }
-});
-
 app.get("/generateReport", async (request, response) => {
     try {
         const startDate = utils.parseDate(request.body.startDate) || new Date(-8640000000000000);
