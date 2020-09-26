@@ -5,7 +5,7 @@ const utils    = require("../utils");
 const OilProductionReport   = require("../models/reports/oilProductionReport");
 const WaterProductionReport = require("../models/reports/waterProductionReport");
 
-router.post("/oilTanks", async (request, response) => {
+router.post("/oilProduction", async (request, response) => {
     try {
         const report = new OilProductionReport(utils.parseDocument(OilProductionReport.schema, request.body));
         await report.save();
@@ -33,7 +33,7 @@ router.post("/oilTanks", async (request, response) => {
     }
 });
 
-router.get("/oilTanks/:id", async (request, response) => {
+router.get("/oilProduction/:id", async (request, response) => {
     try {
         const document = await OilProductionReport
             .findById(request.params.id)
@@ -63,7 +63,7 @@ router.get("/oilTanks/:id", async (request, response) => {
         }
 
         else {
-            console.log(`Error occured in "/reports/oilTanks/:id": ${error}`);
+            console.log(`Error occured in "/reports/oilProduction/:id": ${error}`);
             response
                 .status(500)
                 .json({ message: "Internal server error" });
@@ -71,7 +71,7 @@ router.get("/oilTanks/:id", async (request, response) => {
     }
 });
 
-router.post("/waterTanks", async (request, response) => {
+router.post("/waterProduction", async (request, response) => {
     try {
         const report = new WaterProductionReport(utils.parseDocument(WaterProductionReport.schema, request.body));
         await report.save();
@@ -99,7 +99,7 @@ router.post("/waterTanks", async (request, response) => {
     }
 });
 
-router.get("/waterTanks/:id", async (request, response) => {
+router.get("/waterProduction/:id", async (request, response) => {
     try {
         const document = await WaterProductionReport
             .findById(request.params.id)
@@ -129,7 +129,7 @@ router.get("/waterTanks/:id", async (request, response) => {
         }
 
         else {
-            console.log(`Error occured in "/reports/waterTanks/:id": ${error}`);
+            console.log(`Error occured in "/reports/waterProduction/:id": ${error}`);
             response
                 .status(500)
                 .json({ message: "Internal server error" });
