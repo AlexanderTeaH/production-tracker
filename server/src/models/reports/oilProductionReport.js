@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const oilTanksReportSchema = mongoose.Schema({
+const oilProductionReportSchema = mongoose.Schema({
     site: {
         type: String,
         required: true
@@ -30,4 +30,4 @@ const oilTanksReportSchema = mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model("OilTankReport", oilTanksReportSchema);
+module.exports = mongoose.model("OilProductionReport", oilProductionReportSchema);

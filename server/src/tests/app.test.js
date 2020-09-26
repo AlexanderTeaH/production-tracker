@@ -3,8 +3,8 @@ const supertest = require("supertest");
 const request   = supertest(app);
 const mongoose  = require("mongoose");
 
-const OilTanksReport   = require("../models/reports/oilTanksReport");
-const WaterTanksReport = require("../models/reports/waterTanksReport");
+const OilProductionReport   = require("../models/reports/oilProductionReport");
+const WaterProductionReport = require("../models/reports/waterProductionReport");
 
 beforeAll(async () => {
     if (process.env.NODE_ENV !== "test") {
@@ -37,7 +37,7 @@ describe("POST /reports/oilTanks", () => {
     test("Adds report", async () => {
         const validEntry    = { site: "X", level: 1, volume: 1, temperature: 1, density: 1, weight: 1 };
         const response      = await request.post("/reports/oilTanks").send(validEntry);
-        const mongooseQuery = await OilTanksReport.findById(response.body.report.id).exec();
+        const mongooseQuery = await OilProductionReport.findById(response.body.report.id).exec();
 
         expect(response.statusCode).toBe(201);
         expect(response.body.message).toBe("Added oil tank report");
@@ -56,7 +56,7 @@ describe("POST /reports/oilTanks", () => {
         }
 
         const responses     = await Promise.all(requests);
-        const mongooseQuery = await OilTanksReport.find().exec();
+        const mongooseQuery = await OilProductionReport.find().exec();
 
         for (const response of responses) {
             expect(response.statusCode).toBe(400);
@@ -80,7 +80,7 @@ describe("POST /reports/oilTanks", () => {
         }
 
         const responses     = await Promise.all(requests);
-        const mongooseQuery = await OilTanksReport.find().exec();
+        const mongooseQuery = await OilProductionReport.find().exec();
 
         for (const response of responses) {
             expect(response.statusCode).toBe(400);
@@ -114,7 +114,7 @@ describe("POST /reports/waterTanks", () => {
     test("Adds report", async () => {
         const validEntry    = { site: "X", level: 1, volume: 1, density: 1, weight: 1 };
         const response      = await request.post("/reports/waterTanks").send(validEntry);
-        const mongooseQuery = await WaterTanksReport.findById(response.body.report.id).exec();
+        const mongooseQuery = await WaterProductionReport.findById(response.body.report.id).exec();
 
         expect(response.statusCode).toBe(201);
         expect(response.body.message).toBe("Added water tank report");
@@ -133,7 +133,7 @@ describe("POST /reports/waterTanks", () => {
         }
 
         const responses     = await Promise.all(requests);
-        const mongooseQuery = await WaterTanksReport.find().exec();
+        const mongooseQuery = await WaterProductionReport.find().exec();
 
         for (const response of responses) {
             expect(response.statusCode).toBe(400);
@@ -157,7 +157,7 @@ describe("POST /reports/waterTanks", () => {
         }
 
         const responses     = await Promise.all(requests);
-        const mongooseQuery = await WaterTanksReport.find().exec();
+        const mongooseQuery = await WaterProductionReport.find().exec();
 
         for (const response of responses) {
             expect(response.statusCode).toBe(400);

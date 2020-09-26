@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const waterTanksReportSchema = mongoose.Schema({
+const waterProductionReportSchema = mongoose.Schema({
     site: {
         type: String,
         required: true
@@ -26,4 +26,4 @@ const waterTanksReportSchema = mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model("WaterTankReport", waterTanksReportSchema);
+module.exports = mongoose.model("WaterProductionReport", waterProductionReportSchema);
