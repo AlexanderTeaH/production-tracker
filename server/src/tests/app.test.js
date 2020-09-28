@@ -5,6 +5,7 @@ const mongoose  = require("mongoose");
 
 const OilProductionReport   = require("../models/reports/oilProductionReport");
 const WaterProductionReport = require("../models/reports/waterProductionReport");
+const ProductionSite        = require("../models/sites/productionSite");
 
 beforeAll(async () => {
     if (process.env.NODE_ENV !== "test") {
@@ -184,5 +185,46 @@ describe("GET /reports/waterProduction/:id", () => {
 
         expect(response.statusCode).toBe(404);
         expect(response.body.message).toBe("Report doesn't exist");
+    });
+});
+
+describe("POST /sites/production", () => {
+    test("Adds production site", async () => {
+        const entry    = { name: "X" };
+        const response = await request.post("/sites/production").send(entry);
+        const query    = await ProductionSite.findById(response.body.report.id).exec();
+
+        expect(response.statusCode).toBe(201);
+        expect(response.body.message).toBe("Added production site");
+        expect(response.body.report).toMatchObject(entry);
+        expect(query).toMatchObject(entry);
+    });
+
+    test("Handles missing name parameter", async () => {
+        const response = await request.post("/sites/production").send({});
+        const query    = await WaterProductionReport.find().exec();
+
+        expect(response.statusCode).toBe(400);
+        expect(response.body.message).toBe("Bad request");
+        expect(query.length).toBe(0);
+    });
+});
+
+describe("GET /sites/production/:id", () => {
+    test("Retrieves site", async () => {
+        const entry    = { name: "X" };
+        const id       = (await request.post("/sites/production").send(entry)).body.report.id;
+        const response = await request.get(`/sites/production/${id}`);
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body.message).toBe("Found site");
+        expect(response.body.report).toMatchObject(entry);
+    });
+
+    test("Handles bad id parameter", async () => {
+        const response = await request.get("/sites/production/invalidID");
+
+        expect(response.statusCode).toBe(404);
+        expect(response.body.message).toBe("Site doesn't exist");
     });
 });
