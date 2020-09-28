@@ -10,15 +10,15 @@ router.get("/dailyReport", async (request, response) => {
     try {
         const date  = utils.parseDate(request.body.date);
         const query = await Promise.all([
-            await ProductionSite
+            ProductionSite
                 .find()
                 .sort({ name: 1 })
                 .exec(),
-            await OilProductionReport
+            OilProductionReport
                 .where("dailyReportDate")
                 .equals(date)
                 .exec(),
-            await WaterProductionReport
+            WaterProductionReport
                 .where("dailyReportDate")
                 .equals(date)
                 .exec()
