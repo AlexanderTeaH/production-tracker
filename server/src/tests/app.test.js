@@ -229,11 +229,23 @@ describe("POST /sites/production", () => {
 
     test("Handles missing name parameter", async () => {
         const response = await request.post("/sites/production").send({});
-        const query    = await WaterProductionReport.find().exec();
+        const query    = await ProductionSite.find().exec();
 
         expect(response.statusCode).toBe(400);
         expect(response.body.message).toBe("Bad request");
         expect(query.length).toBe(0);
+    });
+
+    test("Handles non-unique name parameter", async () => {
+        const entry = { name: "X" };
+        await request.post("/sites/production").send(entry);
+
+        const response = await request.post("/sites/production").send(entry);
+        const query    = await ProductionSite.find().exec();
+
+        expect(response.statusCode).toBe(400);
+        expect(response.body.message).toBe("Bad request");
+        expect(query.length).toBe(1);
     });
 });
 
