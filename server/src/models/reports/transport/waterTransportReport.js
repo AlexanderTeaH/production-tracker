@@ -1,12 +1,12 @@
 const mongoose = require("mongoose");
 
-const waterProductionReportSchema = mongoose.Schema({
-    site: {
+const waterTransportReportSchema = mongoose.Schema({
+    from: {
         type: String,
         required: true
     },
-    level: {
-        type: Number,
+    to: {
+        type: String,
         required: true
     },
     volume: {
@@ -26,4 +26,4 @@ const waterProductionReportSchema = mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model("WaterProductionReport", waterProductionReportSchema);
+module.exports = mongoose.model("WaterTransportReport", waterTransportReportSchema, "reports.transport.water");

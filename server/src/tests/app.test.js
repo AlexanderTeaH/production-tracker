@@ -3,8 +3,8 @@ const supertest = require("supertest");
 const request   = supertest(app);
 const mongoose  = require("mongoose");
 
-const OilProductionReport   = require("../models/reports/oilProductionReport");
-const WaterProductionReport = require("../models/reports/waterProductionReport");
+const OilProductionReport   = require("../models/reports/production/oilProductionReport");
+const WaterProductionReport = require("../models/reports/production/waterProductionReport");
 const ProductionSite        = require("../models/sites/productionSite");
 
 beforeAll(async () => {
@@ -34,26 +34,30 @@ afterAll(async () => {
     await mongoose.disconnect();
 });
 
-describe("POST /reports/oilProduction", () => {
+describe("POST /reports/production/oil", () => {
     test("Adds report", async () => {
-        const validEntry    = { site: "X", level: 1, volume: 1, temperature: 1, density: 1, weight: 1 };
-        const response      = await request.post("/reports/oilProduction").send(validEntry);
-        const mongooseQuery = await OilProductionReport.findById(response.body.report.id).exec();
+        await request.post("/sites/production").send({ name: "X" });
+
+        const entry    = { site: "X", level: 1, volume: 1, temperature: 1, density: 1, weight: 1 };
+        const response = await request.post("/reports/production/oil").send(entry);
+        const query    = await OilProductionReport.findById(response.body.report.id).exec();
 
         expect(response.statusCode).toBe(201);
         expect(response.body.message).toBe("Added oil tank report");
-        expect(response.body.report).toMatchObject(validEntry);
-        expect(mongooseQuery).toMatchObject(validEntry);
+        expect(response.body.report).toMatchObject(entry);
+        expect(query).toMatchObject(entry);
     });
 
     test("Handles missing parameters", async () => {
+        await request.post("/sites/production").send({ name: "X" });
+
         const validEntry = { site: "X", level: 1, volume: 1, temperature: 1, density: 1, weight: 1 };
         let   requests   = [];
 
         for (const property in validEntry) {
             // eslint-disable-next-line no-unused-vars
             const { [property]: ommited, ...rest } = validEntry;
-            requests.push(request.post("/reports/oilProduction").send(rest));
+            requests.push(request.post("/reports/production/oil").send(rest));
         }
 
         const responses     = await Promise.all(requests);
@@ -68,6 +72,8 @@ describe("POST /reports/oilProduction", () => {
     });
 
     test("Handles bad parameter values", async () => {
+        await request.post("/sites/production").send({ name: "X" });
+        
         const validEntry = { site: "X", level: 1, volume: 1, temperature: 1, density: 1, weight: 1 };
         let   requests   = [];
 
@@ -75,8 +81,13 @@ describe("POST /reports/oilProduction", () => {
             let { [property]: ommited, ...rest } = validEntry;
 
             if (!isNaN(ommited)) {
-                rest[ommited] = "Not a number";
-                requests.push(request.post("/reports/oilProduction").send(rest));
+                rest[property] = "Not a number";
+                requests.push(request.post("/reports/production/oil").send(rest));
+            }
+
+            else if (property == "site") {
+                rest[property] = "Y";
+                requests.push(request.post("/reports/production/oil").send(rest));
             }
         }
 
@@ -92,11 +103,13 @@ describe("POST /reports/oilProduction", () => {
     });
 });
 
-describe("GET /reports/oilProduction/:id", () => {
+describe("GET /reports/production/oil/:id", () => {
     test("Retrieves report", async () => {
+        await request.post("/sites/production").send({ name: "X" });
+
         const entry    = { site: "X", level: 1, volume: 1, temperature: 1, density: 1, weight: 1 };
-        const id       = (await request.post("/reports/oilProduction").send(entry)).body.report.id;
-        const response = await request.get(`/reports/oilProduction/${id}`);
+        const id       = (await request.post("/reports/production/oil").send(entry)).body.report.id;
+        const response = await request.get(`/reports/production/oil/${id}`);
 
         expect(response.statusCode).toBe(200);
         expect(response.body.message).toBe("Found report");
@@ -104,17 +117,19 @@ describe("GET /reports/oilProduction/:id", () => {
     });
 
     test("Handles bad id parameter", async () => {
-        const response = await request.get("/reports/oilProduction/invalidID");
+        const response = await request.get("/reports/production/oil/invalidID");
 
         expect(response.statusCode).toBe(404);
         expect(response.body.message).toBe("Report doesn't exist");
     });
 });
 
-describe("POST /reports/waterProduction", () => {
+describe("POST /reports/production/water", () => {
     test("Adds report", async () => {
+        await request.post("/sites/production").send({ name: "X" });
+
         const validEntry    = { site: "X", level: 1, volume: 1, density: 1, weight: 1 };
-        const response      = await request.post("/reports/waterProduction").send(validEntry);
+        const response      = await request.post("/reports/production/water").send(validEntry);
         const mongooseQuery = await WaterProductionReport.findById(response.body.report.id).exec();
 
         expect(response.statusCode).toBe(201);
@@ -124,13 +139,15 @@ describe("POST /reports/waterProduction", () => {
     });
 
     test("Handles missing parameters", async () => {
+        await request.post("/sites/production").send({ name: "X" });
+
         const validEntry = { site: "X", level: 1, volume: 1, density: 1, weight: 1 };
         let   requests   = [];
 
         for (const property in validEntry) {
             // eslint-disable-next-line no-unused-vars
             const { [property]: ommited, ...rest } = validEntry;
-            requests.push(request.post("/reports/waterProduction").send(rest));
+            requests.push(request.post("/reports/production/water").send(rest));
         }
 
         const responses     = await Promise.all(requests);
@@ -145,6 +162,8 @@ describe("POST /reports/waterProduction", () => {
     });
 
     test("Handles bad parameter values", async () => {
+        await request.post("/sites/production").send({ name: "X" });
+
         const validEntry = { site: "X", level: 1, volume: 1, density: 1, weight: 1 };
         let   requests   = [];
 
@@ -152,8 +171,13 @@ describe("POST /reports/waterProduction", () => {
             let { [property]: ommited, ...rest } = validEntry;
 
             if (!isNaN(ommited)) {
-                rest[ommited] = "Not a number";
-                requests.push(request.post("/reports/waterProduction").send(rest));
+                rest[property] = "Not a number";
+                requests.push(request.post("/reports/production/water").send(rest));
+            }
+
+            else if (property == "site") {
+                rest[property] = "Y";
+                requests.push(request.post("/reports/production/water").send(rest));
             }
         }
 
@@ -169,11 +193,14 @@ describe("POST /reports/waterProduction", () => {
     });
 });
 
-describe("GET /reports/waterProduction/:id", () => {
+describe("GET /reports/production/water/:id", () => {
     test("Retrieves report", async () => {
+        await request.post("/sites/production").send({ name: "X" });
+
+
         const entry    = { site: "X", level: 1, volume: 1, density: 1, weight: 1 };
-        const id       = (await request.post("/reports/waterProduction").send(entry)).body.report.id;
-        const response = await request.get(`/reports/waterProduction/${id}`);
+        const id       = (await request.post("/reports/production/water").send(entry)).body.report.id;
+        const response = await request.get(`/reports/production/water/${id}`);
 
         expect(response.statusCode).toBe(200);
         expect(response.body.message).toBe("Found report");
@@ -181,7 +208,7 @@ describe("GET /reports/waterProduction/:id", () => {
     });
 
     test("Handles bad id parameter", async () => {
-        const response = await request.get("/reports/waterProduction/invalidID");
+        const response = await request.get("/reports/production/water/invalidID");
 
         expect(response.statusCode).toBe(404);
         expect(response.body.message).toBe("Report doesn't exist");

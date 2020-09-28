@@ -30,4 +30,4 @@ const oilTransportReportSchema = mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model("OilTransportReport", oilTransportReportSchema);
+module.exports = mongoose.model("OilTransportReport", oilTransportReportSchema, "reports.transport.oil");

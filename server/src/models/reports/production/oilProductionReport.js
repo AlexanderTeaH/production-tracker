@@ -1,9 +1,17 @@
 const mongoose = require("mongoose");
+const ProductionSite = require("../../sites/productionSite");
+
+// TODO: Remove report postfix and create sub-table "reports"
 
 const oilProductionReportSchema = mongoose.Schema({
     site: {
         type: String,
-        required: true
+        required: true,
+        validate: function (siteName) {
+            return new Promise(function (resolve) {
+                ProductionSite.findOne({ name: siteName }, (error, result) => resolve(result ? true : false));
+            });
+        }
     },
     level: {
         type: Number,
@@ -30,4 +38,4 @@ const oilProductionReportSchema = mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model("OilProductionReport", oilProductionReportSchema);
+module.exports = mongoose.model("OilProductionReport", oilProductionReportSchema, "reports.production.oil");

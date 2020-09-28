@@ -2,10 +2,10 @@ const router   = require("express").Router();
 const mongoose = require("mongoose");
 const utils    = require("../utils");
 
-const OilProductionReport   = require("../models/reports/oilProductionReport");
-const WaterProductionReport = require("../models/reports/waterProductionReport");
+const OilProductionReport   = require("../models/reports/production/oilProductionReport");
+const WaterProductionReport = require("../models/reports/production/waterProductionReport");
 
-router.post("/oilProduction", async (request, response) => {
+router.post("/production/oil", async (request, response) => {
     try {
         const report = new OilProductionReport(utils.parseDocument(OilProductionReport.schema, request.body));
         await report.save();
@@ -33,7 +33,7 @@ router.post("/oilProduction", async (request, response) => {
     }
 });
 
-router.get("/oilProduction/:id", async (request, response) => {
+router.get("/production/oil/:id", async (request, response) => {
     try {
         const document = await OilProductionReport
             .findById(request.params.id)
@@ -71,7 +71,7 @@ router.get("/oilProduction/:id", async (request, response) => {
     }
 });
 
-router.post("/waterProduction", async (request, response) => {
+router.post("/production/water", async (request, response) => {
     try {
         const report = new WaterProductionReport(utils.parseDocument(WaterProductionReport.schema, request.body));
         await report.save();
@@ -99,7 +99,7 @@ router.post("/waterProduction", async (request, response) => {
     }
 });
 
-router.get("/waterProduction/:id", async (request, response) => {
+router.get("/production/water/:id", async (request, response) => {
     try {
         const document = await WaterProductionReport
             .findById(request.params.id)

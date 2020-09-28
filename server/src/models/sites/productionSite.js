@@ -10,4 +10,4 @@ const productionSiteSchema = mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model("ProductionSite", productionSiteSchema);
+module.exports = mongoose.model("ProductionSite", productionSiteSchema, "sites.production");
