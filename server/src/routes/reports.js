@@ -25,7 +25,7 @@ router.post("/production/oil", async (request, response) => {
         }
 
         else {
-            console.log(`Error occured in "/reports/oilTank": ${error}`);
+            console.log(`Error occured in "POST /reports/oilTank": ${error}`);
             response
                 .status(500)
                 .json({ message: "Internal server error" });
@@ -63,7 +63,7 @@ router.get("/production/oil/:id", async (request, response) => {
         }
 
         else {
-            console.log(`Error occured in "/reports/oilProduction/:id": ${error}`);
+            console.log(`Error occured in "GET /reports/oilProduction/:id": ${error}`);
             response
                 .status(500)
                 .json({ message: "Internal server error" });
@@ -91,7 +91,7 @@ router.post("/production/water", async (request, response) => {
         }
 
         else {
-            console.log(`Error occured in "/reports/waterTank": ${error}`);
+            console.log(`Error occured in "POST /reports/waterTank": ${error}`);
             response
                 .status(500)
                 .json({ message: "Internal server error" });
@@ -129,7 +129,7 @@ router.get("/production/water/:id", async (request, response) => {
         }
 
         else {
-            console.log(`Error occured in "/reports/waterProduction/:id": ${error}`);
+            console.log(`Error occured in "GET /reports/waterProduction/:id": ${error}`);
             response
                 .status(500)
                 .json({ message: "Internal server error" });

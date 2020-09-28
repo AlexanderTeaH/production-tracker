@@ -24,6 +24,7 @@ router.get("/dailyReport", async (request, response) => {
                 .exec()
         ]);
 
+        const rows      = utils.mergeProductionReports(query[0], query[1], query[2]);
         const workbook  = new excelJS.Workbook();
         const worksheet = workbook.addWorksheet(date.toISOString().split("T")[0]);
 
@@ -84,8 +85,8 @@ router.get("/dailyReport", async (request, response) => {
         worksheet.getRow(2).height    = 20;
         worksheet.getRow(2).alignment = { horizontal: "center", vertical: "middle" };
 
-        for (const report of utils.mergeProductionReports(query[0], query[1], query[2])) {
-            worksheet.addRow(report);
+        for (const row of rows) {
+            worksheet.addRow(row);
         }
 
         response
@@ -96,7 +97,7 @@ router.get("/dailyReport", async (request, response) => {
     }
 
     catch (error) {
-        console.log(`Error occured in "/dailyReport": ${error}`);
+        console.log(`Error occured in "GET /spreadsheets/dailyReport": ${error}`);
         response
             .status(500)
             .json({ message: "Internal server error" });
