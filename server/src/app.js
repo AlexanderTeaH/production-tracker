@@ -9,8 +9,9 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cors({ origin: "*" }));
 
-app.use("/sites",   require("./routes/sites"));
-app.use("/reports", require("./routes/reports"));
+app.use("/sites",        require("./routes/sites"));
+app.use("/reports",      require("./routes/reports"));
+app.use("/spreadsheets", require("./routes/spreadsheets"));
 
 dotenv.config();
 

@@ -38,3 +38,33 @@ module.exports.documentToJSON = (document) => {
 
     return json;
 };
+
+module.exports.mergeProductionReports = (sites, oilReports, waterReports) => {
+    const dict = {};
+
+    for (const site of sites) {
+        dict[site.name] = { site: site.name };
+    }
+
+    for (const report of oilReports) {
+        dict[report.site] = Object.assign(dict[report.site], {
+            site:           report.site,
+            oilLevel:       report.level,
+            oilVolume:      report.volume,
+            oilTemperature: report.temperature,
+            oilDensity:     report.density,
+            oilWeight:      report.weight
+        });
+    }
+
+    for (const report of waterReports) {
+        dict[report.site] = Object.assign(dict[report.site], {
+            waterLevel:   report.level,
+            waterVolume:  report.volume,
+            waterDensity: report.density,
+            waterWeight:  report.weight
+        });
+    }
+
+    return Object.values(dict);
+};

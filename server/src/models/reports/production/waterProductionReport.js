@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+const mongoose       = require("mongoose");
 const ProductionSite = require("../../sites/productionSite");
 
 const waterProductionReportSchema = mongoose.Schema({
@@ -26,6 +26,18 @@ const waterProductionReportSchema = mongoose.Schema({
     weight: {
         type: Number,
         required: true
+    },
+    dailyReportDate: {
+        type: Date,
+        required: false,
+        validate: {
+            validator: function (date) {
+                return date.getUTCHours() == 0
+                    && date.getUTCMinutes() == 0
+                    && date.getUTCSeconds() == 0
+                    && date.getUTCMilliseconds() == 0;
+            }
+        }
     }
 },
 {
