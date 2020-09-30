@@ -43,7 +43,7 @@ describe("POST /reports/production/oil", () => {
         const query    = await OilProductionReport.findById(response.body.report.id).exec();
 
         expect(response.statusCode).toBe(201);
-        expect(response.body.message).toBe("Added oil tank report");
+        expect(response.body.message).toBe("Added report");
         expect(response.body.report).toMatchObject(entry);
         expect(query).toMatchObject(entry);
     });
@@ -133,7 +133,7 @@ describe("POST /reports/production/water", () => {
         const mongooseQuery = await WaterProductionReport.findById(response.body.report.id).exec();
 
         expect(response.statusCode).toBe(201);
-        expect(response.body.message).toBe("Added water tank report");
+        expect(response.body.message).toBe("Added report");
         expect(response.body.report).toMatchObject(validEntry);
         expect(mongooseQuery).toMatchObject(validEntry);
     });
@@ -222,7 +222,7 @@ describe("POST /sites/production", () => {
         const query    = await ProductionSite.findById(response.body.report.id).exec();
 
         expect(response.statusCode).toBe(201);
-        expect(response.body.message).toBe("Added production site");
+        expect(response.body.message).toBe("Added site");
         expect(response.body.report).toMatchObject(entry);
         expect(query).toMatchObject(entry);
     });

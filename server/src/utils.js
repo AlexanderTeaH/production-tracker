@@ -1,15 +1,69 @@
-module.exports.parseDate = (dateString) => {
-    if (!dateString || !dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
-        return null;
+const mongoose = require("mongoose");
+
+module.exports.saveDocument = async (request, response, Model, successMessage) => {
+    try {
+        const report = new Model(this.parseDocument(Model.schema, request.body));
+        await report.save();
+        response
+            .status(201)
+            .json({
+                message: successMessage,
+                report:  this.documentToJSON(report)
+            });
     }
 
-    const date = new Date(dateString);
+    catch (error) {
+        if (error instanceof mongoose.Error.ValidationError) {
+            response
+                .status(400)
+                .json({ message: "Bad request" });
+        }
 
-    if (isNaN(date.getTime())) {
-        return null;
+        else {
+            console.log(`Error occured in "${request.method} ${request.originalUrl}": ${error}`);
+            response
+                .status(500)
+                .json({ message: "Internal server error" });
+        }
+    }
+};
+
+module.exports.getDocument = async (request, response, Model, successMessage, missingMessage) => {
+    try {
+        const document = await Model
+            .findById(request.params.id)
+            .exec();
+
+        if (!document) {
+            response
+                .status(404)
+                .json({ message: missingMessage });
+        }
+
+        else {
+            response
+                .status(200)
+                .json({
+                    message: successMessage,
+                    report:  this.documentToJSON(document)
+                });
+        }
     }
 
-    return date;
+    catch (error) {
+        if (error instanceof mongoose.Error.CastError) {
+            response
+                .status(404)
+                .json({ message: missingMessage });
+        }
+
+        else {
+            console.log(`Error occured in "${request.method} ${request.originalUrl}": ${error}`);
+            response
+                .status(500)
+                .json({ message: "Internal server error" });
+        }
+    }
 };
 
 module.exports.parseDocument = (schema, json) => {
@@ -37,6 +91,20 @@ module.exports.documentToJSON = (document) => {
     }
 
     return json;
+};
+
+module.exports.parseDate = (dateString) => {
+    if (!dateString || !dateString.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return null;
+    }
+
+    const date = new Date(dateString);
+
+    if (isNaN(date.getTime())) {
+        return null;
+    }
+
+    return date;
 };
 
 module.exports.mergeProductionReports = (sites, oilReports, waterReports) => {
