@@ -7,8 +7,8 @@ module.exports.saveDocument = async (request, response, Model, successMessage) =
         response
             .status(201)
             .json({
-                message: successMessage,
-                report:  this.documentToJSON(report)
+                message:  successMessage,
+                document: this.documentToJSON(report)
             });
     }
 
@@ -44,8 +44,8 @@ module.exports.getDocument = async (request, response, Model, successMessage, mi
             response
                 .status(200)
                 .json({
-                    message: successMessage,
-                    report:  this.documentToJSON(document)
+                    message:  successMessage,
+                    document: this.documentToJSON(document)
                 });
         }
     }
@@ -63,6 +63,29 @@ module.exports.getDocument = async (request, response, Model, successMessage, mi
                 .status(500)
                 .json({ message: "Internal server error" });
         }
+    }
+};
+
+module.exports.getAllDocuments = async (request, response, Model, sortingParameters) => {
+    try {
+        const documents = await Model
+            .find()
+            .sort(sortingParameters)
+            .exec();
+
+        response
+            .status(200)
+            .json({
+                message:   "Found documents",
+                documents: this.documentsToJSON(documents)
+            });
+    }
+
+    catch (error) {
+        console.log(`Error occured in "${request.method} ${request.originalUrl}": ${error}`);
+        response
+            .status(500)
+            .json({ message: "Internal server error" });
     }
 };
 
@@ -91,6 +114,10 @@ module.exports.documentToJSON = (document) => {
     }
 
     return json;
+};
+
+module.exports.documentsToJSON = (documents) => {
+    return documents.map(document => this.documentToJSON(document));
 };
 
 module.exports.parseDate = (dateString) => {

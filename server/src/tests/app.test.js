@@ -40,11 +40,11 @@ describe("POST /reports/production/oil", () => {
 
         const entry    = { site: "X", level: 1, volume: 1, temperature: 1, density: 1, weight: 1 };
         const response = await request.post("/reports/production/oil").send(entry);
-        const query    = await OilProductionReport.findById(response.body.report.id).exec();
+        const query    = await OilProductionReport.findById(response.body.document.id).exec();
 
         expect(response.statusCode).toBe(201);
         expect(response.body.message).toBe("Added report");
-        expect(response.body.report).toMatchObject(entry);
+        expect(response.body.document).toMatchObject(entry);
         expect(query).toMatchObject(entry);
     });
 
@@ -108,12 +108,12 @@ describe("GET /reports/production/oil/:id", () => {
         await request.post("/sites/production").send({ name: "X" });
 
         const entry    = { site: "X", level: 1, volume: 1, temperature: 1, density: 1, weight: 1 };
-        const id       = (await request.post("/reports/production/oil").send(entry)).body.report.id;
+        const id       = (await request.post("/reports/production/oil").send(entry)).body.document.id;
         const response = await request.get(`/reports/production/oil/${id}`);
 
         expect(response.statusCode).toBe(200);
         expect(response.body.message).toBe("Found report");
-        expect(response.body.report).toMatchObject(entry);
+        expect(response.body.document).toMatchObject(entry);
     });
 
     test("Handles bad id parameter", async () => {
@@ -130,11 +130,11 @@ describe("POST /reports/production/water", () => {
 
         const validEntry    = { site: "X", level: 1, volume: 1, density: 1, weight: 1 };
         const response      = await request.post("/reports/production/water").send(validEntry);
-        const mongooseQuery = await WaterProductionReport.findById(response.body.report.id).exec();
+        const mongooseQuery = await WaterProductionReport.findById(response.body.document.id).exec();
 
         expect(response.statusCode).toBe(201);
         expect(response.body.message).toBe("Added report");
-        expect(response.body.report).toMatchObject(validEntry);
+        expect(response.body.document).toMatchObject(validEntry);
         expect(mongooseQuery).toMatchObject(validEntry);
     });
 
@@ -199,12 +199,12 @@ describe("GET /reports/production/water/:id", () => {
 
 
         const entry    = { site: "X", level: 1, volume: 1, density: 1, weight: 1 };
-        const id       = (await request.post("/reports/production/water").send(entry)).body.report.id;
+        const id       = (await request.post("/reports/production/water").send(entry)).body.document.id;
         const response = await request.get(`/reports/production/water/${id}`);
 
         expect(response.statusCode).toBe(200);
         expect(response.body.message).toBe("Found report");
-        expect(response.body.report).toMatchObject(entry);
+        expect(response.body.document).toMatchObject(entry);
     });
 
     test("Handles bad id parameter", async () => {
@@ -219,11 +219,11 @@ describe("POST /sites/production", () => {
     test("Adds production site", async () => {
         const entry    = { name: "X" };
         const response = await request.post("/sites/production").send(entry);
-        const query    = await ProductionSite.findById(response.body.report.id).exec();
+        const query    = await ProductionSite.findById(response.body.document.id).exec();
 
         expect(response.statusCode).toBe(201);
         expect(response.body.message).toBe("Added site");
-        expect(response.body.report).toMatchObject(entry);
+        expect(response.body.document).toMatchObject(entry);
         expect(query).toMatchObject(entry);
     });
 
@@ -249,15 +249,40 @@ describe("POST /sites/production", () => {
     });
 });
 
+describe("GET /sites/production", () => {
+    test("Retrieves production sites", async () => {
+        const names = ["X", "Y"];
+
+        for (const name of names) {
+            await request.post("/sites/production").send({ name: name });
+        }
+
+        const response = await request.get("/sites/production");
+        const query    = await ProductionSite.find().exec();
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body.message).toBe("Found documents");
+        expect(response.body.documents.map(site => site.name)).toMatchObject(names);
+    });
+
+    test("Handles no production sites", async () => {
+        const response = await request.get("/sites/production");
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body.message).toBe("Found documents");
+        expect(response.body.documents).toMatchObject([]);
+    });
+});
+
 describe("GET /sites/production/:id", () => {
     test("Retrieves site", async () => {
         const entry    = { name: "X" };
-        const id       = (await request.post("/sites/production").send(entry)).body.report.id;
+        const id       = (await request.post("/sites/production").send(entry)).body.document.id;
         const response = await request.get(`/sites/production/${id}`);
 
         expect(response.statusCode).toBe(200);
         expect(response.body.message).toBe("Found site");
-        expect(response.body.report).toMatchObject(entry);
+        expect(response.body.document).toMatchObject(entry);
     });
 
     test("Handles bad id parameter", async () => {

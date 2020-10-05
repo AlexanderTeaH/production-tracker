@@ -7,6 +7,10 @@ router.post("/production", async (request, response) => {
     utils.saveDocument(request, response, ProductionSite, "Added site");
 });
 
+router.get("/production", async (request, response) => {
+    utils.getAllDocuments(request, response, ProductionSite, { name: 1 });
+});
+
 router.get("/production/:id", async (request, response) => {
     utils.getDocument(request, response, ProductionSite, "Found site", "Site doesn't exist");
 });
