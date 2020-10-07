@@ -1,8 +1,6 @@
 const mongoose       = require("mongoose");
 const ProductionSite = require("../../sites/productionSite");
 
-// TODO: Remove report postfix and create sub-table "reports"
-
 const oilProductionReportSchema = mongoose.Schema({
     site: {
         type: String,
