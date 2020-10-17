@@ -5,6 +5,8 @@ const mongoose  = require("mongoose");
 
 const OilProductionReport   = require("../models/reports/production/oilProductionReport");
 const WaterProductionReport = require("../models/reports/production/waterProductionReport");
+const OilTransportReport    = require("../models/reports/transport/oilTransportReport");
+const WaterTransportReport  = require("../models/reports/transport/waterTransportReport");
 const ProductionSite        = require("../models/sites/productionSite");
 
 beforeAll(async () => {
@@ -197,7 +199,6 @@ describe("GET /reports/production/water/:id", () => {
     test("Retrieves report", async () => {
         await request.post("/sites/production").send({ name: "X" });
 
-
         const entry    = { site: "X", level: 1, volume: 1, density: 1, weight: 1 };
         const id       = (await request.post("/reports/production/water").send(entry)).body.document.id;
         const response = await request.get(`/reports/production/water/${id}`);
@@ -209,6 +210,210 @@ describe("GET /reports/production/water/:id", () => {
 
     test("Handles bad id parameter", async () => {
         const response = await request.get("/reports/production/water/invalidID");
+
+        expect(response.statusCode).toBe(404);
+        expect(response.body.message).toBe("Report doesn't exist");
+    });
+});
+
+describe("POST /reports/transport/oil", () => {
+    test("Adds report", async () => {
+        await Promise.all([
+            request.post("/sites/production").send({ name: "X" }),
+            request.post("/sites/production").send({ name: "Y" })
+        ]);
+
+        const entry    = { from: "X", to: "Y", volume: 1, temperature: 1, density: 1, weight: 1 };
+        const response = await request.post("/reports/transport/oil").send(entry);
+        const query    = await OilTransportReport.findById(response.body.document.id).exec();
+
+        expect(response.statusCode).toBe(201);
+        expect(response.body.message).toBe("Added report");
+        expect(response.body.document).toMatchObject(entry);
+        expect(query).toMatchObject(entry);
+    });
+
+    test("Handles missing parameters", async () => {
+        await Promise.all([
+            request.post("/sites/production").send({ name: "X" }),
+            request.post("/sites/production").send({ name: "Y" })
+        ]);
+
+        const validEntry = { from: "X", to: "Y", volume: 1, temperature: 1, density: 1, weight: 1 };
+        let requests     = [];
+
+        for (const property in validEntry) {
+            // eslint-disable-next-line no-unused-vars
+            const { [property]: ommited, ...rest } = validEntry;
+            requests.push(request.post("/reports/transport/oil").send(rest));
+        }
+
+        const responses     = await Promise.all(requests);
+        const mongooseQuery = await OilTransportReport.find().exec();
+
+        for (const response of responses) {
+            expect(response.statusCode).toBe(400);
+            expect(response.body.message).toBe("Bad request");
+        }
+
+        expect(mongooseQuery.length).toBe(0);
+    });
+
+    test("Handles bad parameter values", async () => {
+        await Promise.all([
+            request.post("/sites/production").send({ name: "X" }),
+            request.post("/sites/production").send({ name: "Y" })
+        ]);
+
+        const validEntry = { from: "X", to: "Y", volume: 1, temperature: 1, density: 1, weight: 1 };
+        let requests     = [];
+
+        for (const property in validEntry) {
+            let { [property]: ommited, ...rest } = validEntry;
+
+            if (!isNaN(ommited)) {
+                rest[property] = "Not a number";
+                requests.push(request.post("/reports/transport/oil").send(rest));
+            }
+
+            else if (property == "site") {
+                rest[property] = "Y";
+                requests.push(request.post("/reports/transport/oil").send(rest));
+            }
+        }
+
+        const responses     = await Promise.all(requests);
+        const mongooseQuery = await OilTransportReport.find().exec();
+
+        for (const response of responses) {
+            expect(response.statusCode).toBe(400);
+            expect(response.body.message).toBe("Bad request");
+        }
+
+        expect(mongooseQuery.length).toBe(0);
+    });
+});
+
+describe("GET /reports/transport/oil/:id", () => {
+    test("Retrieves report", async () => {
+        await Promise.all([
+            request.post("/sites/production").send({ name: "X" }),
+            request.post("/sites/production").send({ name: "Y" })
+        ]);
+
+        const entry    = { from: "X", to: "Y", volume: 1, temperature: 1, density: 1, weight: 1 };
+        const id       = (await request.post("/reports/transport/oil").send(entry)).body.document.id;
+        const response = await request.get(`/reports/transport/oil/${id}`);
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body.message).toBe("Found report");
+        expect(response.body.document).toMatchObject(entry);
+    });
+
+    test("Handles bad id parameter", async () => {
+        const response = await request.get("/reports/transport/oil/invalidID");
+
+        expect(response.statusCode).toBe(404);
+        expect(response.body.message).toBe("Report doesn't exist");
+    });
+});
+
+describe("POST /reports/transport/water", () => {
+    test("Adds report", async () => {
+        await Promise.all([
+            request.post("/sites/production").send({ name: "X" }),
+            request.post("/sites/production").send({ name: "Y" })
+        ]);
+
+        const validEntry    = { from: "X", to: "Y", volume: 1, density: 1, weight: 1 };
+        const response      = await request.post("/reports/transport/water").send(validEntry);
+        const mongooseQuery = await WaterTransportReport.findById(response.body.document.id).exec();
+
+        expect(response.statusCode).toBe(201);
+        expect(response.body.message).toBe("Added report");
+        expect(response.body.document).toMatchObject(validEntry);
+        expect(mongooseQuery).toMatchObject(validEntry);
+    });
+
+    test("Handles missing parameters", async () => {
+        await Promise.all([
+            request.post("/sites/production").send({ name: "X" }),
+            request.post("/sites/production").send({ name: "Y" })
+        ]);
+
+        const validEntry = { from: "X", to: "Y", volume: 1, density: 1, weight: 1 };
+        let requests     = [];
+
+        for (const property in validEntry) {
+            // eslint-disable-next-line no-unused-vars
+            const { [property]: ommited, ...rest } = validEntry;
+            requests.push(request.post("/reports/transport/water").send(rest));
+        }
+
+        const responses     = await Promise.all(requests);
+        const mongooseQuery = await WaterTransportReport.find().exec();
+
+        for (const response of responses) {
+            expect(response.statusCode).toBe(400);
+            expect(response.body.message).toBe("Bad request");
+        }
+
+        expect(mongooseQuery.length).toBe(0);
+    });
+
+    test("Handles bad parameter values", async () => {
+        await Promise.all([
+            request.post("/sites/production").send({ name: "X" }),
+            request.post("/sites/production").send({ name: "Y" })
+        ]);
+
+        const validEntry = { from: "X", to: "Y", volume: 1, density: 1, weight: 1 };
+        let requests     = [];
+
+        for (const property in validEntry) {
+            let { [property]: ommited, ...rest } = validEntry;
+
+            if (!isNaN(ommited)) {
+                rest[property] = "Not a number";
+                requests.push(request.post("/reports/transport/water").send(rest));
+            }
+
+            else if (property == "site") {
+                rest[property] = "Y";
+                requests.push(request.post("/reports/transport/water").send(rest));
+            }
+        }
+
+        const responses     = await Promise.all(requests);
+        const mongooseQuery = await WaterProductionReport.find().exec();
+
+        for (const response of responses) {
+            expect(response.statusCode).toBe(400);
+            expect(response.body.message).toBe("Bad request");
+        }
+
+        expect(mongooseQuery.length).toBe(0);
+    });
+});
+
+describe("GET /reports/transport/water/:id", () => {
+    test("Retrieves report", async () => {
+        await Promise.all([
+            request.post("/sites/production").send({ name: "X" }),
+            request.post("/sites/production").send({ name: "Y" })
+        ]);
+
+        const entry    = { from: "X", to: "Y", volume: 1, density: 1, weight: 1 };
+        const id       = (await request.post("/reports/transport/water").send(entry)).body.document.id;
+        const response = await request.get(`/reports/transport/water/${id}`);
+
+        expect(response.statusCode).toBe(200);
+        expect(response.body.message).toBe("Found report");
+        expect(response.body.document).toMatchObject(entry);
+    });
+
+    test("Handles bad id parameter", async () => {
+        const response = await request.get("/reports/transport/water/invalidID");
 
         expect(response.statusCode).toBe(404);
         expect(response.body.message).toBe("Report doesn't exist");
