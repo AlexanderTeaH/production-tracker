@@ -16,15 +16,6 @@
                     fill-height
                 >
                     <v-row>
-                        <!--
-                        <v-col align="center">
-                            <v-date-picker
-                                v-model="date"
-                                first-day-of-week="1"
-                                no-title
-                            ></v-date-picker>
-                        </v-col>
-                        -->
                         <v-col>
                             <v-select
                                 :items="reportTypes"
@@ -115,6 +106,38 @@
                                         required
                                         :rules="[v => !!v || 'Weight is required', numberRule]"
                                     ></v-text-field>
+                                    <v-checkbox
+                                        v-model="isMidnightReport"
+                                        label="Midnight report"
+                                    ></v-checkbox>
+                                    <v-menu
+                                        v-model="dateMenu"
+                                        :close-on-content-click="false"
+                                        :nudge-right="40"
+                                        lazy
+                                        transition="scale-transition"
+                                        offset-y
+                                        full-width
+                                        max-width="290px"
+                                        min-width="290px"
+                                    >
+                                        <template v-slot:activator="{ on }">
+                                            <v-text-field
+                                                :disabled="!isMidnightReport"
+                                                label="Date"
+                                                prepend-icon="event"
+                                                readonly
+                                                :value="date"
+                                                v-on="on"
+                                            ></v-text-field>
+                                        </template>
+                                        <v-date-picker
+                                            v-model="date"
+                                            first-day-of-week="1"
+                                            no-title
+                                            @input="dateMenu = false"
+                                        ></v-date-picker>
+                                    </v-menu>
                                 </v-col>
                             </v-row>
                         </v-col>
@@ -143,9 +166,11 @@ export default {
         reportTypes: [
             "Production report"
         ],
-        reportType:    null,
-        reportSubtype: null,
-        isValid:       true,
+        reportType:       null,
+        reportSubtype:    null,
+        isMidnightReport: false,
+        dateMenu:         false,
+        isValid:          true,
 
         sites:       null,
         date:        new Date().toISOString().split("T")[0],
@@ -173,15 +198,23 @@ export default {
                 .data.documents.map(site => site.name);
         },
         async submit() {
-            const response = await axios
-                .post(`http://127.0.0.1/reports/production/${this.reportSubtype}`, {
-                    site:        this.site,
-                    level:       this.level,
-                    volume:      this.volume,
-                    temperature: this.temperature,
-                    density:     this.density,
-                    weight:      this.weight
-                });
+            let body = {
+                site:            this.site,
+                level:           this.level,
+                volume:          this.volume,
+                density:         this.density,
+                weight:          this.weight
+            };
+
+            if (this.reportSubtype == "oil") {
+                body.temperature = this.temperature;
+            }
+
+            if (this.isMidnightReport) {
+                body.dailyReportDate = this.date;
+            }
+
+            const response = await axios.post(`http://127.0.0.1/reports/production/${this.reportSubtype}`, body);
             
             if (response.status == 201) {
                 this.$refs.form.reset();
