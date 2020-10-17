@@ -139,6 +139,58 @@
                                         ></v-date-picker>
                                     </v-menu>
                                 </v-col>
+                                <v-col v-if="reportType == 'Transport report'">
+                                    <v-select
+                                        :items="sites"
+                                        v-model="from"
+                                        label="From"
+                                        prepend-icon="place"
+                                        outlined
+                                        required
+                                        :rules="[v => !!v || 'From site is required']"
+                                    ></v-select>
+                                    <v-select
+                                        :items="sites"
+                                        v-model="to"
+                                        label="To"
+                                        prepend-icon="place"
+                                        outlined
+                                        required
+                                        :rules="[v => !!v || 'To site is required']"
+                                    ></v-select>
+                                    <v-text-field
+                                        v-model="volume"
+                                        label="Volume (m³)"
+                                        prepend-icon="local_gas_station"
+                                        outlined
+                                        required
+                                        :rules="[v => !!v || 'Volume is required', numberRule]"
+                                    ></v-text-field>
+                                    <v-text-field v-if="reportSubtype == 'oil'"
+                                        v-model="temperature"
+                                        label="Temperature (°C)"
+                                        prepend-icon="filter_drama"
+                                        outlined
+                                        required
+                                        :rules="[v => !!v || 'Temperature is required', numberRule]"
+                                    ></v-text-field>
+                                    <v-text-field
+                                        v-model="density"
+                                        label="Density (g/cm³)"
+                                        prepend-icon="bubble_chart"
+                                        outlined
+                                        required
+                                        :rules="[v => !!v || 'Density is required', numberRule]"
+                                    ></v-text-field>
+                                    <v-text-field
+                                        v-model="weight"
+                                        label="Weight (tons)"
+                                        prepend-icon="fitness_center"
+                                        outlined
+                                        required
+                                        :rules="[v => !!v || 'Weight is required', numberRule]"
+                                    ></v-text-field>
+                                </v-col>
                             </v-row>
                         </v-col>
                     </v-row>
@@ -163,8 +215,10 @@ import axios from "axios";
 export default {
     name: "ReportForm",
     data: () => ({
+        // Form selection logic variables
         reportTypes: [
-            "Production report"
+            "Production report",
+            "Transport report"
         ],
         reportType:       null,
         reportSubtype:    null,
@@ -172,15 +226,19 @@ export default {
         dateMenu:         false,
         isValid:          true,
 
+        // Form values
         sites:       null,
-        date:        new Date().toISOString().split("T")[0],
+        from:        null,
+        to:          null,
         site:        null,
         level:       null,
         volume:      null,
         temperature: null,
         density:     null,
         weight:      null,
+        date:        new Date().toISOString().split("T")[0],
 
+        // Validation rules
         numberRule: (v) => {
             if (!isNaN(v)) {
                 return true;
@@ -198,23 +256,44 @@ export default {
                 .data.documents.map(site => site.name);
         },
         async submit() {
-            let body = {
-                site:            this.site,
-                level:           this.level,
-                volume:          this.volume,
-                density:         this.density,
-                weight:          this.weight
-            };
+            let reportType;
+            let body;
 
-            if (this.reportSubtype == "oil") {
-                body.temperature = this.temperature;
+            if (this.reportType == "Production report") {
+                reportType = "production";
+                body = {
+                    site:            this.site,
+                    level:           this.level,
+                    volume:          this.volume,
+                    density:         this.density,
+                    weight:          this.weight
+                };
+
+                if (this.reportSubtype == "oil") {
+                    body.temperature = this.temperature;
+                }
+
+                if (this.isMidnightReport) {
+                    body.dailyReportDate = this.date;
+                }
             }
 
-            if (this.isMidnightReport) {
-                body.dailyReportDate = this.date;
+            else if (this.reportType == "Transport report") {
+                reportType = "transport";
+                body = {
+                    from:            this.from,
+                    to:              this.to,
+                    volume:          this.volume,
+                    density:         this.density,
+                    weight:          this.weight
+                };
+
+                if (this.reportSubtype == "oil") {
+                    body.temperature = this.temperature;
+                }
             }
 
-            const response = await axios.post(`http://127.0.0.1/reports/production/${this.reportSubtype}`, body);
+            const response = await axios.post(`http://127.0.0.1/reports/${reportType}/${this.reportSubtype}`, body);
             
             if (response.status == 201) {
                 this.$refs.form.reset();
