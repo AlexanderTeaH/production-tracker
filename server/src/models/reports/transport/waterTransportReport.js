@@ -1,13 +1,24 @@
-const mongoose = require("mongoose");
+const mongoose       = require("mongoose");
+const ProductionSite = require("../../sites/productionSite");
 
 const waterTransportReportSchema = mongoose.Schema({
     from: {
         type: String,
-        required: true
+        required: true,
+        validate: function (siteName) {
+            return new Promise(function (resolve) {
+                ProductionSite.findOne({ name: siteName }, (error, result) => resolve(result ? true : false));
+            });
+        }
     },
     to: {
         type: String,
-        required: true
+        required: true,
+        validate: function (siteName) {
+            return new Promise(function (resolve) {
+                ProductionSite.findOne({ name: siteName }, (error, result) => resolve(result ? true : false));
+            });
+        }
     },
     volume: {
         type: Number,
