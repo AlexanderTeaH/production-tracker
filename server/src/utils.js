@@ -2,13 +2,13 @@ const mongoose = require("mongoose");
 
 module.exports.saveDocument = async (request, response, Model, successMessage) => {
     try {
-        const report = new Model(this.parseDocument(Model.schema, request.body));
-        await report.save();
+        const document = new Model(this.parseDocument(Model.schema, request.body));
+        await document.save();
         response
             .status(201)
             .json({
                 message:  successMessage,
-                document: this.documentToJSON(report)
+                document: this.documentToJSON(document)
             });
     }
 
