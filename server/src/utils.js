@@ -134,7 +134,7 @@ module.exports.parseDate = (dateString) => {
     return date;
 };
 
-module.exports.mergeProductionReports = (sites, oilReports, waterReports) => {
+module.exports.mergeReports = (sites, oilReports, waterReports, oilTransportReports, waterTransportReports) => {
     const dict = {};
 
     for (const site of sites) {
@@ -158,6 +158,25 @@ module.exports.mergeProductionReports = (sites, oilReports, waterReports) => {
             waterVolume:  report.volume,
             waterDensity: report.density,
             waterWeight:  report.weight
+        });
+    }
+
+    for (const report of oilTransportReports) {
+        dict[report.from] = Object.assign(dict[report.from], {
+            oilTransportTo:          report.to,
+            oilTransportVolume:      report.volume,
+            oilTransportTemperature: report.temperature,
+            oilTransportDensity:     report.density,
+            oilTransportWeight:      report.weight
+        });
+    }
+
+    for (const report of waterTransportReports) {
+        dict[report.from] = Object.assign(dict[report.from], {
+            waterTransportTo:      report.to,
+            waterTransportVolume:  report.volume,
+            waterTransportDensity: report.density,
+            waterTransportWeight:  report.weight
         });
     }
 
