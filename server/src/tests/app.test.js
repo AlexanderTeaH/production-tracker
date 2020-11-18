@@ -7,6 +7,7 @@ const OilProductionReport   = require("../models/reports/production/oilProductio
 const WaterProductionReport = require("../models/reports/production/waterProductionReport");
 const OilTransportReport    = require("../models/reports/transport/oilTransportReport");
 const WaterTransportReport  = require("../models/reports/transport/waterTransportReport");
+const WaterInjectionReport  = require("../models/reports/injection/waterInjectionReport");
 const ProductionSite        = require("../models/sites/productionSite");
 
 beforeAll(async () => {
@@ -76,6 +77,15 @@ const validEntries = {
                 volume:      1,
                 density:     1,
                 weight:      1
+            }
+        },
+        injection: {
+            water: {
+                from:    "X-1",
+                to:      "X-2",
+                volume:  1,
+                density: 1,
+                weight:  1
             }
         }
     },
@@ -744,6 +754,151 @@ describe("/reports", () => {
                 test("[404] Report with specified ID doesn't exist", async () => {
                     const response = await request
                         .get("/reports/transport/water/non-existent-id");
+
+                    expect(response.statusCode)
+                        .toBe(404);
+
+                    expect(response.body.message)
+                        .toBe("Report doesn't exist");
+                });
+            });
+        });
+    });
+
+    describe("/injection", () => {
+        describe("/water", () => {
+            describe("POST", () => {
+                test("[201] Adds report", async () => {
+                    await addProductionSites();
+
+                    const response = await request
+                        .post("/reports/injection/water")
+                        .send(validEntries.reports.injection.water);
+
+                    const databaseQuery = await WaterInjectionReport
+                        .findById(response.body.document.id)
+                        .exec();
+
+                    expect(response.statusCode)
+                        .toBe(201);
+
+                    expect(response.body.message)
+                        .toBe("Added report");
+
+                    expect(response.body.document)
+                        .toMatchObject(validEntries.reports.injection.water);
+
+                    expect(databaseQuery)
+                        .toMatchObject(validEntries.reports.injection.water);
+                });
+
+                test("[400] Missing parameters", async () => {
+                    await addProductionSites();
+
+                    const responses = await createMissingParameterRequests("/reports/injection/water", validEntries.reports.injection.water);
+                    const databaseQuery = await WaterInjectionReport
+                        .find()
+                        .exec();
+
+                    for (const response of responses) {
+                        expect(response.statusCode)
+                            .toBe(400);
+
+                        expect(response.body.message)
+                            .toBe("Bad request");
+                    }
+
+                    expect(databaseQuery.length)
+                        .toBe(0);
+                });
+
+                test("[400] Bad parameter types", async () => {
+                    await addProductionSites();
+
+                    const responses = await createBadParameterTypeRequests("/reports/injection/water", validEntries.reports.injection.water);
+                    const databaseQuery = await WaterInjectionReport
+                        .find()
+                        .exec();
+
+                    for (const response of responses) {
+                        expect(response.statusCode)
+                            .toBe(400);
+
+                        expect(response.body.message)
+                            .toBe("Bad request");
+                    }
+
+                    expect(databaseQuery.length)
+                        .toBe(0);
+                });
+
+                test("[400] Specified sites don't exist", async () => {
+                    await addProductionSites();
+
+                    const responses = await Promise.all([
+                        request
+                            .post("/reports/injection/water")
+                            .send({
+                                from:    "Non-existent site",
+                                to:      "X-2",
+                                volume:  1,
+                                density: 1,
+                                weight:  1
+                            }),
+                        request
+                            .post("/reports/injection/water")
+                            .send({
+                                from:    "X-1",
+                                to:      "Non-existent site",
+                                volume:  1,
+                                density: 1,
+                                weight:  1
+                            })
+                    ]);
+
+                    const databaseQuery = await WaterInjectionReport
+                        .find()
+                        .exec();
+
+                    for (const response of responses) {
+                        expect(response.statusCode)
+                            .toBe(400);
+
+                        expect(response.body.message)
+                            .toBe("Bad request");
+                    }
+
+                    expect(databaseQuery.length)
+                        .toBe(0);
+                });
+            });
+
+            describe("GET /:id", () => {
+                test("[200] Finds report", async () => {
+                    await addProductionSites();
+
+                    const id = (
+                        await request
+                            .post("/reports/injection/water")
+                            .send(validEntries.reports.injection.water)
+                    ).body.document.id;
+
+                    const response = await request
+                        .get(`/reports/injection/water/${id}`);
+
+                    expect(response.statusCode)
+                        .toBe(200);
+
+                    expect(response.body.message)
+                        .toBe("Found report");
+
+                    expect(response.body.document)
+                        .toMatchObject(validEntries.reports.injection.water);
+                });
+
+                test("[404] Report with specified ID doesn't exist", async () => {
+                    const response = await request
+                        .get("/reports/injection/water/non-existent-id");
 
                     expect(response.statusCode)
                         .toBe(404);
