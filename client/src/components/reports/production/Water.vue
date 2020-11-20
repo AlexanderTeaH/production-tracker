@@ -55,7 +55,7 @@
                     ></v-select>
                     <v-text-field
                         v-model="level"
-                        label="Level (m)"
+                        label="Level in tank (m)"
                         prepend-icon="square_foot"
                         outlined
                         required
@@ -63,7 +63,7 @@
                     ></v-text-field>
                     <v-text-field
                         v-model="volume"
-                        label="Volume (m³)"
+                        label="Volume in tank (m³)"
                         prepend-icon="local_gas_station"
                         outlined
                         required
@@ -79,7 +79,7 @@
                     ></v-text-field>
                     <v-text-field
                         v-model="weight"
-                        label="Weight (tons)"
+                        label="Weight in tank (tons)"
                         prepend-icon="fitness_center"
                         outlined
                         required
