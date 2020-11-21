@@ -2,10 +2,10 @@ const router  = require("express").Router();
 const excelJS = require("exceljs");
 const utils   = require("../utils");
 
-const OilProductionReport   = require("../models/reports/production/oilProductionReport");
-const WaterProductionReport = require("../models/reports/production/waterProductionReport");
-const OilTransportReport    = require("../models/reports/transport/oilTransportReport");
-const WaterTransportReport  = require("../models/reports/transport/waterTransportReport");
+const OilProductionDailyReport = require("../models/reports/production/daily/oil");
+const WaterProductionReport = require("../models/reports/production/daily/water");
+const OilTransportReport    = require("../models/reports/transport/oil");
+const WaterTransportReport  = require("../models/reports/transport/water");
 const ProductionSite        = require("../models/sites/productionSite");
 
 router.get("/dailyReport", async (request, response) => {
@@ -19,7 +19,7 @@ router.get("/dailyReport", async (request, response) => {
                 .find()
                 .sort({ name: 1 })
                 .exec(),
-            OilProductionReport
+            OilProductionDailyReport
                 .where("dailyReportDate")
                 .equals(date)
                 .exec(),

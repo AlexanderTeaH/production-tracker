@@ -3,12 +3,27 @@ const supertest = require("supertest");
 const request   = supertest(app);
 const mongoose  = require("mongoose");
 
-const OilProductionReport   = require("../models/reports/production/oilProductionReport");
-const WaterProductionReport = require("../models/reports/production/waterProductionReport");
-const OilTransportReport    = require("../models/reports/transport/oilTransportReport");
-const WaterTransportReport  = require("../models/reports/transport/waterTransportReport");
-const WaterInjectionReport  = require("../models/reports/injection/waterInjectionReport");
-const ProductionSite        = require("../models/sites/productionSite");
+const models = {
+    production: {
+        daily: {
+            oil:   require("../models/reports/production/daily/oil"),
+            water: require("../models/reports/production/daily/water")
+        },
+        shifts: {
+            oil:   require("../models/reports/production/shifts/oil"),
+            water: require("../models/reports/production/shifts/water")
+        }
+    },
+    transport: {
+        oil:   require("../models/reports/transport/oil"),
+        water: require("../models/reports/transport/water")
+    },
+    injection: {
+        water: require("../models/reports/injection/water")
+    }
+};
+
+const ProductionSite = require("../models/sites/productionSite");
 
 beforeAll(async () => {
     if (process.env.NODE_ENV !== "test") {
@@ -37,7 +52,7 @@ afterAll(async () => {
     await mongoose.disconnect();
 });
 
-const validEntries = {
+const entries = {
     users: {
         user: {
             name:     "userOne",
@@ -46,20 +61,45 @@ const validEntries = {
     },
     reports: {
         production: {
-            oil: {
-                site:        "X-1",
-                level:       1,
-                volume:      1,
-                temperature: 1,
-                density:     1,
-                weight:      1
+            daily: {
+                oil: {
+                    site:             "X-1",
+                    level:            1,
+                    temperature:      1,
+                    density:          1,
+                    volume:           1,
+                    totalDailyVolume: 1,
+                    weight:           1,
+                    totalDailyWeight: 1,
+                    dailyReportDate:  "2020-11-21T00:00:00.000Z"
+                },
+                water: {
+                    site:             "X-1",
+                    level:            1,
+                    density:          1,
+                    volume:           1,
+                    totalDailyVolume: 1,
+                    weight:           1,
+                    totalDailyWeight: 1,
+                    dailyReportDate:  "2020-11-21T00:00:00.000Z"
+                },
             },
-            water: {
-                site:        "X-1",
-                level:       1,
-                volume:      1,
-                density:     1,
-                weight:      1
+            shifts: {
+                oil: {
+                    site:        "X-1",
+                    level:       1,
+                    volume:      1,
+                    temperature: 1,
+                    density:     1,
+                    weight:      1
+                },
+                water: {
+                    site:        "X-1",
+                    level:       1,
+                    volume:      1,
+                    density:     1,
+                    weight:      1
+                }
             }
         },
         transport: {
@@ -136,7 +176,7 @@ describe("/users", () => {
         test("[201] Adds user", async () => {
             const response = await request
                 .post("/users")
-                .send(validEntries.users.user);
+                .send(entries.users.user);
 
             expect(response.statusCode)
                 .toBe(201);
@@ -145,14 +185,14 @@ describe("/users", () => {
                 .toBe("Added user");
 
             expect(response.body.document)
-                .toMatchObject({ name: validEntries.users.user.name });
+                .toMatchObject({ name: entries.users.user.name });
             
             expect(response.body.document.password)
                 .toBe(undefined);
         });
 
         test("[400] Missing parameters", async () => {
-            const responses = await createMissingParameterRequests("/users", validEntries.users.user);
+            const responses = await createMissingParameterRequests("/users", entries.users.user);
 
             for (const response of responses) {
                 expect(response.statusCode)
@@ -166,11 +206,11 @@ describe("/users", () => {
         test("[400] Non-unique user name", async () => {
             await request
                 .post("/users")
-                .send(validEntries.users.user);
+                .send(entries.users.user);
 
             const response = await request
                 .post("/users")
-                .send(validEntries.users.user);
+                .send(entries.users.user);
 
             expect(response.statusCode)
                 .toBe(400);
@@ -184,10 +224,10 @@ describe("/users", () => {
         test("[200] Finds user", async () => {
             await request
                 .post("/users")
-                .send(validEntries.users.user);
+                .send(entries.users.user);
             
             const response = await request
-                .get(`/users/${validEntries.users.user.name}`);
+                .get(`/users/${entries.users.user.name}`);
 
             expect(response.statusCode)
                 .toBe(200);
@@ -196,7 +236,7 @@ describe("/users", () => {
                 .toBe("Found user");
 
             expect(response.body.document)
-                .toMatchObject({ name: validEntries.users.user.name });
+                .toMatchObject({ name: entries.users.user.name });
             
             expect(response.body.document.password)
                 .toBe(undefined);
@@ -213,263 +253,542 @@ describe("/reports", () => {
     };
 
     describe("/production", () => {
-        describe("/oil", () => {
-            describe("POST", () => {
-                test("[201] Adds report", async () => {
-                    await addProductionSites();
+        describe("/daily", () => {
+            describe("/oil", () => {
+                describe("POST", () => {
+                    test("[201] Adds report", async () => {
+                        await addProductionSites();
 
-                    const response = await request
-                        .post("/reports/production/oil")
-                        .send(validEntries.reports.production.oil);
+                        const response = await request
+                            .post("/reports/production/daily/oil")
+                            .send(entries.reports.production.daily.oil);
 
-                    const databaseQuery = await OilProductionReport
-                        .findById(response.body.document.id)
-                        .exec();
+                        const databaseQuery = await models.production.daily.oil
+                            .findById(response.body.document.id)
+                            .exec();
 
-                    expect(response.statusCode)
-                        .toBe(201);
+                        expect(response.statusCode)
+                            .toBe(201);
 
-                    expect(response.body.message)
-                        .toBe("Added report");
+                        expect(response.body.message)
+                            .toBe("Added report");
+                        
+                        expect(response.body.document)
+                            .toMatchObject(entries.reports.production.daily.oil);
+                        
+                        // Fixes some unexplained date comparison issue
+                        let    expected = JSON.parse(JSON.stringify(entries.reports.production.daily.oil));
+                        delete expected.dailyReportDate;
 
-                    expect(response.body.document)
-                        .toMatchObject(validEntries.reports.production.oil);
+                        expect(databaseQuery)
+                            .toMatchObject(expected);
+                        
+                        expect(new Date(databaseQuery.dailyReportDate))
+                            .toEqual(new Date(entries.reports.production.daily.oil.dailyReportDate));
+                    });
 
-                    expect(databaseQuery)
-                        .toMatchObject(validEntries.reports.production.oil);
-                });
+                    test("[400] Missing parameters", async () => {
+                        await addProductionSites();
 
-                test("[400] Missing parameters", async () => {
-                    await addProductionSites();
+                        const responses     = await createMissingParameterRequests("/reports/production/daily/oil", entries.reports.production.daily.oil);
+                        const databaseQuery = await models.production.daily.oil
+                            .find()
+                            .exec();
 
-                    const responses     = await createMissingParameterRequests("/reports/production/oil", validEntries.reports.production.oil);
-                    const databaseQuery = await OilProductionReport
-                        .find()
-                        .exec();
+                        for (const response of responses) {
+                            expect(response.statusCode)
+                                .toBe(400);
 
-                    for (const response of responses) {
+                            expect(response.body.message)
+                                .toBe("Bad request");
+                        }
+
+                        expect(databaseQuery.length)
+                            .toBe(0);
+                    });
+
+                    test("[400] Bad parameter types", async () => {
+                        await addProductionSites();
+
+                        const responses     = await createBadParameterTypeRequests("/reports/production/daily/oil", entries.reports.production.daily.oil);
+                        const databaseQuery = await models.production.daily.oil
+                            .find()
+                            .exec();
+
+                        for (const response of responses) {
+                            expect(response.statusCode)
+                                .toBe(400);
+
+                            expect(response.body.message)
+                                .toBe("Bad request");
+                        }
+
+                        expect(databaseQuery.length)
+                            .toBe(0);
+                    });
+
+                    test("[400] Specified site doesn't exist", async () => {
+                        await addProductionSites();
+
+                        const response = await request
+                            .post("/reports/production/daily/oil")
+                            .send({
+                                site:        "Non-existent site",
+                                level:       1,
+                                volume:      1,
+                                temperature: 1,
+                                density:     1,
+                                weight:      1
+                            });
+
+                        const databaseQuery = await models.production.daily.oil
+                            .find()
+                            .exec();
+
                         expect(response.statusCode)
                             .toBe(400);
 
                         expect(response.body.message)
                             .toBe("Bad request");
-                    }
 
-                    expect(databaseQuery.length)
-                        .toBe(0);
+                        expect(databaseQuery.length)
+                            .toBe(0);
+                    });
                 });
 
-                test("[400] Bad parameter types", async () => {
-                    await addProductionSites();
+                describe("GET /:id", () => {
+                    test("[200] Finds report", async () => {
+                        await addProductionSites();
 
-                    const responses     = await createBadParameterTypeRequests("/reports/production/oil", validEntries.reports.production.oil);
-                    const databaseQuery = await OilProductionReport
-                        .find()
-                        .exec();
+                        const id = (
+                            await request
+                                .post("/reports/production/daily/oil")
+                                .send(entries.reports.production.daily.oil)
+                        ).body.document.id;
 
-                    for (const response of responses) {
+                        const response = await request
+                            .get(`/reports/production/daily/oil/${id}`);
+
                         expect(response.statusCode)
-                            .toBe(400);
+                            .toBe(200);
 
                         expect(response.body.message)
-                            .toBe("Bad request");
-                    }
+                            .toBe("Found report");
 
-                    expect(databaseQuery.length)
-                        .toBe(0);
-                });
+                        expect(response.body.document)
+                            .toMatchObject(entries.reports.production.daily.oil);
+                    });
 
-                test("[400] Specified site doesn't exist", async () => {
-                    await addProductionSites();
+                    test("[404] Report with specified ID doesn't exist", async () => {
+                        const response = await request
+                            .get("/reports/production/daily/oil/non-existent-id");
 
-                    const response = await request
-                        .post("/reports/production/oil")
-                        .send({
-                            site:        "Non-existent site",
-                            level:       1,
-                            volume:      1,
-                            temperature: 1,
-                            density:     1,
-                            weight:      1
-                        });
+                        expect(response.statusCode)
+                            .toBe(404);
 
-                    const databaseQuery = await OilProductionReport
-                        .find()
-                        .exec();
-
-                    expect(response.statusCode)
-                        .toBe(400);
-
-                    expect(response.body.message)
-                        .toBe("Bad request");
-
-                    expect(databaseQuery.length)
-                        .toBe(0);
+                        expect(response.body.message)
+                            .toBe("Report doesn't exist");
+                    });
                 });
             });
 
-            describe("GET /:id", () => {
-                test("[200] Finds report", async () => {
-                    await addProductionSites();
+            describe("/water", () => {
+                describe("POST", () => {
+                    test("[201] Adds report", async () => {
+                        await addProductionSites();
 
-                    const id = (
-                        await request
-                            .post("/reports/production/oil")
-                            .send(validEntries.reports.production.oil)
-                    ).body.document.id;
+                        const response = await request
+                            .post("/reports/production/daily/water")
+                            .send(entries.reports.production.daily.water);
 
-                    const response = await request
-                        .get(`/reports/production/oil/${id}`);
+                        const databaseQuery = await models.production.daily.water
+                            .findById(response.body.document.id)
+                            .exec();
 
-                    expect(response.statusCode)
-                        .toBe(200);
+                        expect(response.statusCode)
+                            .toBe(201);
 
-                    expect(response.body.message)
-                        .toBe("Found report");
+                        expect(response.body.message)
+                            .toBe("Added report");
 
-                    expect(response.body.document)
-                        .toMatchObject(validEntries.reports.production.oil);
+                        expect(response.body.document)
+                            .toMatchObject(entries.reports.production.daily.water);
+
+                        // Fixes some unexplained date comparison issue
+                        let    expected = JSON.parse(JSON.stringify(entries.reports.production.daily.water));
+                        delete expected.dailyReportDate;
+                        
+                        expect(databaseQuery)
+                            .toMatchObject(expected);
+                        
+                        expect(new Date(databaseQuery.dailyReportDate))
+                            .toEqual(new Date(entries.reports.production.daily.water.dailyReportDate));
+                    });
+
+                    test("[400] Missing parameters", async () => {
+                        await addProductionSites();
+
+                        const responses     = await createMissingParameterRequests("/reports/production/daily/water", entries.reports.production.daily.water);
+                        const databaseQuery = await models.production.daily.water
+                            .find()
+                            .exec();
+
+                        for (const response of responses) {
+                            expect(response.statusCode)
+                                .toBe(400);
+
+                            expect(response.body.message)
+                                .toBe("Bad request");
+                        }
+
+                        expect(databaseQuery.length)
+                            .toBe(0);
+                    });
+
+                    test("[400] Bad parameter types", async () => {
+                        await addProductionSites();
+
+                        const responses     = await createBadParameterTypeRequests("/reports/production/daily/water", entries.reports.production.daily.water);
+                        const databaseQuery = await models.production.daily.water
+                            .find()
+                            .exec();
+
+                        for (const response of responses) {
+                            expect(response.statusCode)
+                                .toBe(400);
+
+                            expect(response.body.message)
+                                .toBe("Bad request");
+                        }
+
+                        expect(databaseQuery.length)
+                            .toBe(0);
+                    });
+
+                    test("[400] Specified site doesn't exist", async () => {
+                        await addProductionSites();
+
+                        const response = await request
+                            .post("/reports/production/daily/water")
+                            .send({
+                                site:    "Non-existent site",
+                                level:   1,
+                                volume:  1,
+                                density: 1,
+                                weight:  1
+                            });
+
+                        const databaseQuery = await models.production.daily.water
+                            .find()
+                            .exec();
+
+                        expect(response.statusCode)
+                            .toBe(400);
+
+                        expect(response.body.message)
+                            .toBe("Bad request");
+
+                        expect(databaseQuery.length)
+                            .toBe(0);
+                    });
                 });
 
-                test("[404] Report with specified ID doesn't exist", async () => {
-                    const response = await request
-                        .get("/reports/production/oil/non-existent-id");
+                describe("GET /:id", () => {
+                    test("[200] Finds report", async () => {
+                        await addProductionSites();
 
-                    expect(response.statusCode)
-                        .toBe(404);
+                        const id = (
+                            await request
+                                .post("/reports/production/daily/water")
+                                .send(entries.reports.production.daily.water)
+                        ).body.document.id;
 
-                    expect(response.body.message)
-                        .toBe("Report doesn't exist");
+                        const response = await request
+                            .get(`/reports/production/daily/water/${id}`);
+
+                        expect(response.statusCode)
+                            .toBe(200);
+
+                        expect(response.body.message)
+                            .toBe("Found report");
+
+                        expect(response.body.document)
+                            .toMatchObject(entries.reports.production.daily.water);
+                    });
+
+                    test("[404] Report with specified ID doesn't exist", async () => {
+                        const response = await request
+                            .get("/reports/production/daily/water/non-existent-id");
+
+                        expect(response.statusCode)
+                            .toBe(404);
+
+                        expect(response.body.message)
+                            .toBe("Report doesn't exist");
+                    });
                 });
             });
         });
 
-        describe("/water", () => {
-            describe("POST", () => {
-                test("[201] Adds report", async () => {
-                    await addProductionSites();
+        describe("/shifts", () => {
+            describe("/oil", () => {
+                describe("POST", () => {
+                    test("[201] Adds report", async () => {
+                        await addProductionSites();
 
-                    const response = await request
-                        .post("/reports/production/water")
-                        .send(validEntries.reports.production.water);
+                        const response = await request
+                            .post("/reports/production/shifts/oil")
+                            .send(entries.reports.production.shifts.oil);
 
-                    const databaseQuery = await WaterProductionReport
-                        .findById(response.body.document.id)
-                        .exec();
+                        const databaseQuery = await models.production.shifts.oil
+                            .findById(response.body.document.id)
+                            .exec();
 
-                    expect(response.statusCode)
-                        .toBe(201);
+                        expect(response.statusCode)
+                            .toBe(201);
 
-                    expect(response.body.message)
-                        .toBe("Added report");
+                        expect(response.body.message)
+                            .toBe("Added report");
 
-                    expect(response.body.document)
-                        .toMatchObject(validEntries.reports.production.water);
+                        expect(response.body.document)
+                            .toMatchObject(entries.reports.production.shifts.oil);
 
-                    expect(databaseQuery)
-                        .toMatchObject(validEntries.reports.production.water);
-                });
+                        expect(databaseQuery)
+                            .toMatchObject(entries.reports.production.shifts.oil);
+                    });
 
-                test("[400] Missing parameters", async () => {
-                    await addProductionSites();
+                    test("[400] Missing parameters", async () => {
+                        await addProductionSites();
 
-                    const responses     = await createMissingParameterRequests("/reports/production/water", validEntries.reports.production.water);
-                    const databaseQuery = await WaterProductionReport
-                        .find()
-                        .exec();
+                        const responses     = await createMissingParameterRequests("/reports/production/shifts/oil", entries.reports.production.shifts.oil);
+                        const databaseQuery = await models.production.shifts.oil
+                            .find()
+                            .exec();
 
-                    for (const response of responses) {
+                        for (const response of responses) {
+                            expect(response.statusCode)
+                                .toBe(400);
+
+                            expect(response.body.message)
+                                .toBe("Bad request");
+                        }
+
+                        expect(databaseQuery.length)
+                            .toBe(0);
+                    });
+
+                    test("[400] Bad parameter types", async () => {
+                        await addProductionSites();
+
+                        const responses     = await createBadParameterTypeRequests("/reports/production/shifts/oil", entries.reports.production.shifts.oil);
+                        const databaseQuery = await models.production.shifts.oil
+                            .find()
+                            .exec();
+
+                        for (const response of responses) {
+                            expect(response.statusCode)
+                                .toBe(400);
+
+                            expect(response.body.message)
+                                .toBe("Bad request");
+                        }
+
+                        expect(databaseQuery.length)
+                            .toBe(0);
+                    });
+
+                    test("[400] Specified site doesn't exist", async () => {
+                        await addProductionSites();
+
+                        const response = await request
+                            .post("/reports/production/shifts/oil")
+                            .send({
+                                site:        "Non-existent site",
+                                level:       1,
+                                volume:      1,
+                                temperature: 1,
+                                density:     1,
+                                weight:      1
+                            });
+
+                        const databaseQuery = await models.production.shifts.oil
+                            .find()
+                            .exec();
+
                         expect(response.statusCode)
                             .toBe(400);
 
                         expect(response.body.message)
                             .toBe("Bad request");
-                    }
 
-                    expect(databaseQuery.length)
-                        .toBe(0);
+                        expect(databaseQuery.length)
+                            .toBe(0);
+                    });
                 });
 
-                test("[400] Bad parameter types", async () => {
-                    await addProductionSites();
+                describe("GET /:id", () => {
+                    test("[200] Finds report", async () => {
+                        await addProductionSites();
 
-                    const responses     = await createBadParameterTypeRequests("/reports/production/water", validEntries.reports.production.water);
-                    const databaseQuery = await WaterProductionReport
-                        .find()
-                        .exec();
+                        const id = (
+                            await request
+                                .post("/reports/production/shifts/oil")
+                                .send(entries.reports.production.shifts.oil)
+                        ).body.document.id;
 
-                    for (const response of responses) {
+                        const response = await request
+                            .get(`/reports/production/shifts/oil/${id}`);
+
                         expect(response.statusCode)
-                            .toBe(400);
+                            .toBe(200);
 
                         expect(response.body.message)
-                            .toBe("Bad request");
-                    }
+                            .toBe("Found report");
 
-                    expect(databaseQuery.length)
-                        .toBe(0);
-                });
+                        expect(response.body.document)
+                            .toMatchObject(entries.reports.production.shifts.oil);
+                    });
 
-                test("[400] Specified site doesn't exist", async () => {
-                    await addProductionSites();
+                    test("[404] Report with specified ID doesn't exist", async () => {
+                        const response = await request
+                            .get("/reports/production/shifts/oil/non-existent-id");
 
-                    const response = await request
-                        .post("/reports/production/water")
-                        .send({
-                            site:    "Non-existent site",
-                            level:   1,
-                            volume:  1,
-                            density: 1,
-                            weight:  1
-                        });
+                        expect(response.statusCode)
+                            .toBe(404);
 
-                    const databaseQuery = await WaterProductionReport
-                        .find()
-                        .exec();
-
-                    expect(response.statusCode)
-                        .toBe(400);
-
-                    expect(response.body.message)
-                        .toBe("Bad request");
-
-                    expect(databaseQuery.length)
-                        .toBe(0);
+                        expect(response.body.message)
+                            .toBe("Report doesn't exist");
+                    });
                 });
             });
 
-            describe("GET /:id", () => {
-                test("[200] Finds report", async () => {
-                    await addProductionSites();
+            describe("/water", () => {
+                describe("POST", () => {
+                    test("[201] Adds report", async () => {
+                        await addProductionSites();
 
-                    const id = (
-                        await request
-                            .post("/reports/production/water")
-                            .send(validEntries.reports.production.water)
-                    ).body.document.id;
+                        const response = await request
+                            .post("/reports/production/shifts/water")
+                            .send(entries.reports.production.shifts.water);
 
-                    const response = await request
-                        .get(`/reports/production/water/${id}`);
+                        const databaseQuery = await models.production.shifts.water
+                            .findById(response.body.document.id)
+                            .exec();
 
-                    expect(response.statusCode)
-                        .toBe(200);
+                        expect(response.statusCode)
+                            .toBe(201);
 
-                    expect(response.body.message)
-                        .toBe("Found report");
+                        expect(response.body.message)
+                            .toBe("Added report");
 
-                    expect(response.body.document)
-                        .toMatchObject(validEntries.reports.production.water);
+                        expect(response.body.document)
+                            .toMatchObject(entries.reports.production.shifts.water);
+
+                        expect(databaseQuery)
+                            .toMatchObject(entries.reports.production.shifts.water);
+                    });
+
+                    test("[400] Missing parameters", async () => {
+                        await addProductionSites();
+
+                        const responses     = await createMissingParameterRequests("/reports/production/shifts/water", entries.reports.production.shifts.water);
+                        const databaseQuery = await models.production.shifts.water
+                            .find()
+                            .exec();
+
+                        for (const response of responses) {
+                            expect(response.statusCode)
+                                .toBe(400);
+
+                            expect(response.body.message)
+                                .toBe("Bad request");
+                        }
+
+                        expect(databaseQuery.length)
+                            .toBe(0);
+                    });
+
+                    test("[400] Bad parameter types", async () => {
+                        await addProductionSites();
+
+                        const responses     = await createBadParameterTypeRequests("/reports/production/shifts/water", entries.reports.production.shifts.water);
+                        const databaseQuery = await models.production.shifts.water
+                            .find()
+                            .exec();
+
+                        for (const response of responses) {
+                            expect(response.statusCode)
+                                .toBe(400);
+
+                            expect(response.body.message)
+                                .toBe("Bad request");
+                        }
+
+                        expect(databaseQuery.length)
+                            .toBe(0);
+                    });
+
+                    test("[400] Specified site doesn't exist", async () => {
+                        await addProductionSites();
+
+                        const response = await request
+                            .post("/reports/production/shifts/water")
+                            .send({
+                                site:    "Non-existent site",
+                                level:   1,
+                                volume:  1,
+                                density: 1,
+                                weight:  1
+                            });
+
+                        const databaseQuery = await models.production.shifts.water
+                            .find()
+                            .exec();
+
+                        expect(response.statusCode)
+                            .toBe(400);
+
+                        expect(response.body.message)
+                            .toBe("Bad request");
+
+                        expect(databaseQuery.length)
+                            .toBe(0);
+                    });
                 });
 
-                test("[404] Report with specified ID doesn't exist", async () => {
-                    const response = await request
-                        .get("/reports/production/water/non-existent-id");
+                describe("GET /:id", () => {
+                    test("[200] Finds report", async () => {
+                        await addProductionSites();
 
-                    expect(response.statusCode)
-                        .toBe(404);
+                        const id = (
+                            await request
+                                .post("/reports/production/shifts/water")
+                                .send(entries.reports.production.shifts.water)
+                        ).body.document.id;
 
-                    expect(response.body.message)
-                        .toBe("Report doesn't exist");
+                        const response = await request
+                            .get(`/reports/production/shifts/water/${id}`);
+
+                        expect(response.statusCode)
+                            .toBe(200);
+
+                        expect(response.body.message)
+                            .toBe("Found report");
+
+                        expect(response.body.document)
+                            .toMatchObject(entries.reports.production.shifts.water);
+                    });
+
+                    test("[404] Report with specified ID doesn't exist", async () => {
+                        const response = await request
+                            .get("/reports/production/shifts/water/non-existent-id");
+
+                        expect(response.statusCode)
+                            .toBe(404);
+
+                        expect(response.body.message)
+                            .toBe("Report doesn't exist");
+                    });
                 });
             });
         });
@@ -483,9 +802,9 @@ describe("/reports", () => {
 
                     const response = await request
                         .post("/reports/transport/oil")
-                        .send(validEntries.reports.transport.oil);
+                        .send(entries.reports.transport.oil);
 
-                    const databaseQuery = await OilTransportReport
+                    const databaseQuery = await models.transport.oil
                         .findById(response.body.document.id)
                         .exec();
 
@@ -496,17 +815,17 @@ describe("/reports", () => {
                         .toBe("Added report");
 
                     expect(response.body.document)
-                        .toMatchObject(validEntries.reports.transport.oil);
+                        .toMatchObject(entries.reports.transport.oil);
 
                     expect(databaseQuery)
-                        .toMatchObject(validEntries.reports.transport.oil);
+                        .toMatchObject(entries.reports.transport.oil);
                 });
 
                 test("[400] Missing parameters", async () => {
                     await addProductionSites();
 
-                    const responses     = await createMissingParameterRequests("/reports/transport/oil", validEntries.reports.transport.oil);
-                    const databaseQuery = await OilTransportReport
+                    const responses     = await createMissingParameterRequests("/reports/transport/oil", entries.reports.transport.oil);
+                    const databaseQuery = await models.transport.oil
                         .find()
                         .exec();
 
@@ -525,8 +844,8 @@ describe("/reports", () => {
                 test("[400] Bad parameter types", async () => {
                     await addProductionSites();
 
-                    const responses     = await createBadParameterTypeRequests("/reports/transport/oil", validEntries.reports.transport.oil);
-                    const databaseQuery = await OilTransportReport
+                    const responses     = await createBadParameterTypeRequests("/reports/transport/oil", entries.reports.transport.oil);
+                    const databaseQuery = await models.transport.oil
                         .find()
                         .exec();
 
@@ -568,7 +887,7 @@ describe("/reports", () => {
                             })
                     ]);
 
-                    const databaseQuery = await OilTransportReport
+                    const databaseQuery = await models.transport.oil
                         .find()
                         .exec();
 
@@ -592,7 +911,7 @@ describe("/reports", () => {
                     const id = (
                         await request
                             .post("/reports/transport/oil")
-                            .send(validEntries.reports.transport.oil)
+                            .send(entries.reports.transport.oil)
                     ).body.document.id;
 
                     const response = await request
@@ -605,7 +924,7 @@ describe("/reports", () => {
                         .toBe("Found report");
 
                     expect(response.body.document)
-                        .toMatchObject(validEntries.reports.transport.oil);
+                        .toMatchObject(entries.reports.transport.oil);
                 });
 
                 test("[404] Report with specified ID doesn't exist", async () => {
@@ -628,9 +947,9 @@ describe("/reports", () => {
 
                     const response = await request
                         .post("/reports/transport/water")
-                        .send(validEntries.reports.transport.water);
+                        .send(entries.reports.transport.water);
 
-                    const databaseQuery = await WaterTransportReport
+                    const databaseQuery = await models.transport.water
                         .findById(response.body.document.id)
                         .exec();
 
@@ -641,17 +960,17 @@ describe("/reports", () => {
                         .toBe("Added report");
 
                     expect(response.body.document)
-                        .toMatchObject(validEntries.reports.transport.water);
+                        .toMatchObject(entries.reports.transport.water);
 
                     expect(databaseQuery)
-                        .toMatchObject(validEntries.reports.transport.water);
+                        .toMatchObject(entries.reports.transport.water);
                 });
 
                 test("[400] Missing parameters", async () => {
                     await addProductionSites();
 
-                    const responses     = await createMissingParameterRequests("/reports/transport/water", validEntries.reports.transport.water);
-                    const databaseQuery = await WaterTransportReport
+                    const responses     = await createMissingParameterRequests("/reports/transport/water", entries.reports.transport.water);
+                    const databaseQuery = await models.transport.water
                         .find()
                         .exec();
 
@@ -670,8 +989,8 @@ describe("/reports", () => {
                 test("[400] Bad parameter types", async () => {
                     await addProductionSites();
 
-                    const responses     = await createBadParameterTypeRequests("/reports/transport/water", validEntries.reports.transport.water);
-                    const databaseQuery = await WaterTransportReport
+                    const responses     = await createBadParameterTypeRequests("/reports/transport/water", entries.reports.transport.water);
+                    const databaseQuery = await models.transport.water
                         .find()
                         .exec();
 
@@ -711,7 +1030,7 @@ describe("/reports", () => {
                             })
                     ]);
 
-                    const databaseQuery = await WaterTransportReport
+                    const databaseQuery = await models.transport.water
                         .find()
                         .exec();
 
@@ -735,7 +1054,7 @@ describe("/reports", () => {
                     const id = (
                         await request
                             .post("/reports/transport/water")
-                            .send(validEntries.reports.transport.water)
+                            .send(entries.reports.transport.water)
                     ).body.document.id;
 
                     const response = await request
@@ -748,7 +1067,7 @@ describe("/reports", () => {
                         .toBe("Found report");
 
                     expect(response.body.document)
-                        .toMatchObject(validEntries.reports.transport.water);
+                        .toMatchObject(entries.reports.transport.water);
                 });
 
                 test("[404] Report with specified ID doesn't exist", async () => {
@@ -773,9 +1092,9 @@ describe("/reports", () => {
 
                     const response = await request
                         .post("/reports/injection/water")
-                        .send(validEntries.reports.injection.water);
+                        .send(entries.reports.injection.water);
 
-                    const databaseQuery = await WaterInjectionReport
+                    const databaseQuery = await models.injection.water
                         .findById(response.body.document.id)
                         .exec();
 
@@ -786,17 +1105,17 @@ describe("/reports", () => {
                         .toBe("Added report");
 
                     expect(response.body.document)
-                        .toMatchObject(validEntries.reports.injection.water);
+                        .toMatchObject(entries.reports.injection.water);
 
                     expect(databaseQuery)
-                        .toMatchObject(validEntries.reports.injection.water);
+                        .toMatchObject(entries.reports.injection.water);
                 });
 
                 test("[400] Missing parameters", async () => {
                     await addProductionSites();
 
-                    const responses = await createMissingParameterRequests("/reports/injection/water", validEntries.reports.injection.water);
-                    const databaseQuery = await WaterInjectionReport
+                    const responses = await createMissingParameterRequests("/reports/injection/water", entries.reports.injection.water);
+                    const databaseQuery = await models.injection.water
                         .find()
                         .exec();
 
@@ -815,8 +1134,8 @@ describe("/reports", () => {
                 test("[400] Bad parameter types", async () => {
                     await addProductionSites();
 
-                    const responses = await createBadParameterTypeRequests("/reports/injection/water", validEntries.reports.injection.water);
-                    const databaseQuery = await WaterInjectionReport
+                    const responses = await createBadParameterTypeRequests("/reports/injection/water", entries.reports.injection.water);
+                    const databaseQuery = await models.injection.water
                         .find()
                         .exec();
 
@@ -856,7 +1175,7 @@ describe("/reports", () => {
                             })
                     ]);
 
-                    const databaseQuery = await WaterInjectionReport
+                    const databaseQuery = await models.injection.water
                         .find()
                         .exec();
 
@@ -880,7 +1199,7 @@ describe("/reports", () => {
                     const id = (
                         await request
                             .post("/reports/injection/water")
-                            .send(validEntries.reports.injection.water)
+                            .send(entries.reports.injection.water)
                     ).body.document.id;
 
                     const response = await request
@@ -893,7 +1212,7 @@ describe("/reports", () => {
                         .toBe("Found report");
 
                     expect(response.body.document)
-                        .toMatchObject(validEntries.reports.injection.water);
+                        .toMatchObject(entries.reports.injection.water);
                 });
 
                 test("[404] Report with specified ID doesn't exist", async () => {
@@ -917,7 +1236,7 @@ describe("/sites", () => {
             test("[200] Adds site", async () => {
                 const response = await request
                     .post("/sites/production")
-                    .send(validEntries.sites.production);
+                    .send(entries.sites.production);
 
                 const databaseQuery = await ProductionSite
                     .findById(response.body.document.id)
@@ -930,10 +1249,10 @@ describe("/sites", () => {
                     .toBe("Added site");
 
                 expect(response.body.document)
-                    .toMatchObject(validEntries.sites.production);
+                    .toMatchObject(entries.sites.production);
 
                 expect(databaseQuery)
-                    .toMatchObject(validEntries.sites.production);
+                    .toMatchObject(entries.sites.production);
             });
 
             test("[400] Missing name parameter", async () => {
@@ -958,11 +1277,11 @@ describe("/sites", () => {
             test("[400] Non-unique site name", async () => {
                 await request
                     .post("/sites/production")
-                    .send(validEntries.sites.production);
+                    .send(entries.sites.production);
 
                 const response = await request
                     .post("/sites/production")
-                    .send(validEntries.sites.production);
+                    .send(entries.sites.production);
 
                 const query = await ProductionSite
                     .find()
@@ -1022,7 +1341,7 @@ describe("/sites", () => {
                 const id = (
                     await request
                         .post("/sites/production")
-                        .send(validEntries.sites.production)
+                        .send(entries.sites.production)
                 ).body.document.id;
 
                 const response = await request
@@ -1035,7 +1354,7 @@ describe("/sites", () => {
                     .toBe("Found site");
 
                 expect(response.body.document)
-                    .toMatchObject(validEntries.sites.production);
+                    .toMatchObject(entries.sites.production);
             });
 
             test("[404] Site with specified ID doesn't exist", async () => {
