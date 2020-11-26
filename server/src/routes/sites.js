@@ -1,18 +1,18 @@
 const router = require("express").Router();
 const utils  = require("../utils");
 
-const ProductionSite = require("../models/sites/productionSite");
+const WellSite = require("../models/sites/well");
 
-router.post("/production", async (request, response) => {
-    utils.saveDocument(request, response, ProductionSite, "Added site");
+router.post("/well", async (request, response) => {
+    utils.saveDocument(request, response, WellSite, "Added site");
 });
 
-router.get("/production", async (request, response) => {
-    utils.getAllDocuments(request, response, ProductionSite, { name: 1 });
+router.get("/well", async (request, response) => {
+    utils.getAllDocuments(request, response, WellSite, { name: 1 });
 });
 
-router.get("/production/:id", async (request, response) => {
-    utils.getDocument(request, response, ProductionSite, "Found site", "Site doesn't exist");
+router.get("/well/:id", async (request, response) => {
+    utils.getDocument(request, response, WellSite, "Found site", "Site doesn't exist");
 });
 
 module.exports = router;

@@ -4,6 +4,9 @@ const request   = supertest(app);
 const mongoose  = require("mongoose");
 
 const models = {
+    sites: {
+        well: require("../models/sites/well")
+    },
     production: {
         daily: {
             oil:   require("../models/reports/production/daily/oil"),
@@ -22,8 +25,6 @@ const models = {
         water: require("../models/reports/injection/water")
     }
 };
-
-const ProductionSite = require("../models/sites/productionSite");
 
 beforeAll(async () => {
     if (process.env.NODE_ENV !== "test") {
@@ -63,30 +64,30 @@ const entries = {
         production: {
             daily: {
                 oil: {
-                    site:             "X-1",
+                    date:             "2020-11-21T00:00:00.000Z",
+                    wellSite:         "X-1",
                     level:            1,
                     temperature:      1,
                     density:          1,
                     volume:           1,
                     totalDailyVolume: 1,
                     weight:           1,
-                    totalDailyWeight: 1,
-                    dailyReportDate:  "2020-11-21T00:00:00.000Z"
+                    totalDailyWeight: 1
                 },
                 water: {
-                    site:             "X-1",
+                    date:             "2020-11-21T00:00:00.000Z",
+                    wellSite:         "X-1",
                     level:            1,
                     density:          1,
                     volume:           1,
                     totalDailyVolume: 1,
                     weight:           1,
-                    totalDailyWeight: 1,
-                    dailyReportDate:  "2020-11-21T00:00:00.000Z"
+                    totalDailyWeight: 1
                 },
             },
             shifts: {
                 oil: {
-                    site:        "X-1",
+                    wellSite:    "X-1",
                     level:       1,
                     volume:      1,
                     temperature: 1,
@@ -94,7 +95,7 @@ const entries = {
                     weight:      1
                 },
                 water: {
-                    site:        "X-1",
+                    wellSite:    "X-1",
                     level:       1,
                     volume:      1,
                     density:     1,
@@ -104,6 +105,7 @@ const entries = {
         },
         transport: {
             oil: {
+                date:        "2020-11-21T00:00:00.000Z",
                 from:        "X-1",
                 to:          "X-2",
                 volume:      1,
@@ -112,6 +114,7 @@ const entries = {
                 weight:      1
             },
             water: {
+                date:        "2020-11-21T00:00:00.000Z",
                 from:        "X-1",
                 to:          "X-2",
                 volume:      1,
@@ -121,6 +124,7 @@ const entries = {
         },
         injection: {
             water: {
+                date:    "2020-11-21T00:00:00.000Z",
                 from:    "X-1",
                 to:      "X-2",
                 volume:  1,
@@ -245,10 +249,10 @@ describe("/users", () => {
 });
 
 describe("/reports", () => {
-    const addProductionSites = async () => {
+    const addWellSites = async () => {
         await Promise.all([
-            request.post("/sites/production").send({ name: "X-1" }),
-            request.post("/sites/production").send({ name: "X-2" })
+            request.post("/sites/well").send({ name: "X-1" }),
+            request.post("/sites/well").send({ name: "X-2" })
         ]);
     };
 
@@ -257,7 +261,7 @@ describe("/reports", () => {
             describe("/oil", () => {
                 describe("POST", () => {
                     test("[201] Adds report", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const response = await request
                             .post("/reports/production/daily/oil")
@@ -278,17 +282,17 @@ describe("/reports", () => {
                         
                         // Fixes some unexplained date comparison issue
                         let    expected = JSON.parse(JSON.stringify(entries.reports.production.daily.oil));
-                        delete expected.dailyReportDate;
+                        delete expected.date;
 
                         expect(databaseQuery)
                             .toMatchObject(expected);
                         
-                        expect(new Date(databaseQuery.dailyReportDate))
-                            .toEqual(new Date(entries.reports.production.daily.oil.dailyReportDate));
+                        expect(new Date(databaseQuery.date))
+                            .toEqual(new Date(entries.reports.production.daily.oil.date));
                     });
 
                     test("[400] Missing parameters", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const responses     = await createMissingParameterRequests("/reports/production/daily/oil", entries.reports.production.daily.oil);
                         const databaseQuery = await models.production.daily.oil
@@ -308,7 +312,7 @@ describe("/reports", () => {
                     });
 
                     test("[400] Bad parameter types", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const responses     = await createBadParameterTypeRequests("/reports/production/daily/oil", entries.reports.production.daily.oil);
                         const databaseQuery = await models.production.daily.oil
@@ -328,7 +332,7 @@ describe("/reports", () => {
                     });
 
                     test("[400] Specified site doesn't exist", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const response = await request
                             .post("/reports/production/daily/oil")
@@ -358,7 +362,7 @@ describe("/reports", () => {
 
                 describe("GET /:id", () => {
                     test("[200] Finds report", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const id = (
                             await request
@@ -395,7 +399,7 @@ describe("/reports", () => {
             describe("/water", () => {
                 describe("POST", () => {
                     test("[201] Adds report", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const response = await request
                             .post("/reports/production/daily/water")
@@ -416,17 +420,17 @@ describe("/reports", () => {
 
                         // Fixes some unexplained date comparison issue
                         let    expected = JSON.parse(JSON.stringify(entries.reports.production.daily.water));
-                        delete expected.dailyReportDate;
+                        delete expected.date;
                         
                         expect(databaseQuery)
                             .toMatchObject(expected);
                         
-                        expect(new Date(databaseQuery.dailyReportDate))
-                            .toEqual(new Date(entries.reports.production.daily.water.dailyReportDate));
+                        expect(new Date(databaseQuery.date))
+                            .toEqual(new Date(entries.reports.production.daily.water.date));
                     });
 
                     test("[400] Missing parameters", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const responses     = await createMissingParameterRequests("/reports/production/daily/water", entries.reports.production.daily.water);
                         const databaseQuery = await models.production.daily.water
@@ -446,7 +450,7 @@ describe("/reports", () => {
                     });
 
                     test("[400] Bad parameter types", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const responses     = await createBadParameterTypeRequests("/reports/production/daily/water", entries.reports.production.daily.water);
                         const databaseQuery = await models.production.daily.water
@@ -466,7 +470,7 @@ describe("/reports", () => {
                     });
 
                     test("[400] Specified site doesn't exist", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const response = await request
                             .post("/reports/production/daily/water")
@@ -495,7 +499,7 @@ describe("/reports", () => {
 
                 describe("GET /:id", () => {
                     test("[200] Finds report", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const id = (
                             await request
@@ -534,7 +538,7 @@ describe("/reports", () => {
             describe("/oil", () => {
                 describe("POST", () => {
                     test("[201] Adds report", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const response = await request
                             .post("/reports/production/shifts/oil")
@@ -558,7 +562,7 @@ describe("/reports", () => {
                     });
 
                     test("[400] Missing parameters", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const responses     = await createMissingParameterRequests("/reports/production/shifts/oil", entries.reports.production.shifts.oil);
                         const databaseQuery = await models.production.shifts.oil
@@ -578,7 +582,7 @@ describe("/reports", () => {
                     });
 
                     test("[400] Bad parameter types", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const responses     = await createBadParameterTypeRequests("/reports/production/shifts/oil", entries.reports.production.shifts.oil);
                         const databaseQuery = await models.production.shifts.oil
@@ -598,7 +602,7 @@ describe("/reports", () => {
                     });
 
                     test("[400] Specified site doesn't exist", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const response = await request
                             .post("/reports/production/shifts/oil")
@@ -628,7 +632,7 @@ describe("/reports", () => {
 
                 describe("GET /:id", () => {
                     test("[200] Finds report", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const id = (
                             await request
@@ -665,7 +669,7 @@ describe("/reports", () => {
             describe("/water", () => {
                 describe("POST", () => {
                     test("[201] Adds report", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const response = await request
                             .post("/reports/production/shifts/water")
@@ -689,7 +693,7 @@ describe("/reports", () => {
                     });
 
                     test("[400] Missing parameters", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const responses     = await createMissingParameterRequests("/reports/production/shifts/water", entries.reports.production.shifts.water);
                         const databaseQuery = await models.production.shifts.water
@@ -709,7 +713,7 @@ describe("/reports", () => {
                     });
 
                     test("[400] Bad parameter types", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const responses     = await createBadParameterTypeRequests("/reports/production/shifts/water", entries.reports.production.shifts.water);
                         const databaseQuery = await models.production.shifts.water
@@ -729,7 +733,7 @@ describe("/reports", () => {
                     });
 
                     test("[400] Specified site doesn't exist", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const response = await request
                             .post("/reports/production/shifts/water")
@@ -758,7 +762,7 @@ describe("/reports", () => {
 
                 describe("GET /:id", () => {
                     test("[200] Finds report", async () => {
-                        await addProductionSites();
+                        await addWellSites();
 
                         const id = (
                             await request
@@ -798,7 +802,7 @@ describe("/reports", () => {
         describe("/oil", () => {
             describe("POST", () => {
                 test("[201] Adds report", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const response = await request
                         .post("/reports/transport/oil")
@@ -817,12 +821,19 @@ describe("/reports", () => {
                     expect(response.body.document)
                         .toMatchObject(entries.reports.transport.oil);
 
+                    // Fixes some unexplained date comparison issue
+                    let    expected = JSON.parse(JSON.stringify(entries.reports.transport.oil));
+                    delete expected.date;
+
                     expect(databaseQuery)
-                        .toMatchObject(entries.reports.transport.oil);
+                        .toMatchObject(expected);
+
+                    expect(new Date(databaseQuery.date))
+                        .toEqual(new Date(entries.reports.transport.oil.date));
                 });
 
                 test("[400] Missing parameters", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const responses     = await createMissingParameterRequests("/reports/transport/oil", entries.reports.transport.oil);
                     const databaseQuery = await models.transport.oil
@@ -842,7 +853,7 @@ describe("/reports", () => {
                 });
 
                 test("[400] Bad parameter types", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const responses     = await createBadParameterTypeRequests("/reports/transport/oil", entries.reports.transport.oil);
                     const databaseQuery = await models.transport.oil
@@ -862,7 +873,7 @@ describe("/reports", () => {
                 });
 
                 test("[400] Specified sites don't exist", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const responses = await Promise.all([
                         request
@@ -906,7 +917,7 @@ describe("/reports", () => {
 
             describe("GET /:id", () => {
                 test("[200] Finds report", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const id = (
                         await request
@@ -943,7 +954,7 @@ describe("/reports", () => {
         describe("/water", () => {
             describe("POST", () => {
                 test("[201] Adds report", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const response = await request
                         .post("/reports/transport/water")
@@ -962,12 +973,19 @@ describe("/reports", () => {
                     expect(response.body.document)
                         .toMatchObject(entries.reports.transport.water);
 
+                    // Fixes some unexplained date comparison issue
+                    let    expected = JSON.parse(JSON.stringify(entries.reports.transport.water));
+                    delete expected.date;
+
                     expect(databaseQuery)
-                        .toMatchObject(entries.reports.transport.water);
+                        .toMatchObject(expected);
+
+                    expect(new Date(databaseQuery.date))
+                        .toEqual(new Date(entries.reports.transport.water.date));
                 });
 
                 test("[400] Missing parameters", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const responses     = await createMissingParameterRequests("/reports/transport/water", entries.reports.transport.water);
                     const databaseQuery = await models.transport.water
@@ -987,7 +1005,7 @@ describe("/reports", () => {
                 });
 
                 test("[400] Bad parameter types", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const responses     = await createBadParameterTypeRequests("/reports/transport/water", entries.reports.transport.water);
                     const databaseQuery = await models.transport.water
@@ -1007,7 +1025,7 @@ describe("/reports", () => {
                 });
 
                 test("[400] Specified sites don't exist", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const responses = await Promise.all([
                         request
@@ -1049,7 +1067,7 @@ describe("/reports", () => {
 
             describe("GET /:id", () => {
                 test("[200] Finds report", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const id = (
                         await request
@@ -1088,7 +1106,7 @@ describe("/reports", () => {
         describe("/water", () => {
             describe("POST", () => {
                 test("[201] Adds report", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const response = await request
                         .post("/reports/injection/water")
@@ -1107,12 +1125,19 @@ describe("/reports", () => {
                     expect(response.body.document)
                         .toMatchObject(entries.reports.injection.water);
 
+                    // Fixes some unexplained date comparison issue
+                    let    expected = JSON.parse(JSON.stringify(entries.reports.injection.water));
+                    delete expected.date;
+
                     expect(databaseQuery)
-                        .toMatchObject(entries.reports.injection.water);
+                        .toMatchObject(expected);
+
+                    expect(new Date(databaseQuery.date))
+                        .toEqual(new Date(entries.reports.injection.water.date));
                 });
 
                 test("[400] Missing parameters", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const responses = await createMissingParameterRequests("/reports/injection/water", entries.reports.injection.water);
                     const databaseQuery = await models.injection.water
@@ -1132,7 +1157,7 @@ describe("/reports", () => {
                 });
 
                 test("[400] Bad parameter types", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const responses = await createBadParameterTypeRequests("/reports/injection/water", entries.reports.injection.water);
                     const databaseQuery = await models.injection.water
@@ -1152,7 +1177,7 @@ describe("/reports", () => {
                 });
 
                 test("[400] Specified sites don't exist", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const responses = await Promise.all([
                         request
@@ -1194,7 +1219,7 @@ describe("/reports", () => {
 
             describe("GET /:id", () => {
                 test("[200] Finds report", async () => {
-                    await addProductionSites();
+                    await addWellSites();
 
                     const id = (
                         await request
@@ -1231,14 +1256,14 @@ describe("/reports", () => {
 });
 
 describe("/sites", () => {
-    describe("/production", () => {
+    describe("/well", () => {
         describe("POST", () => {
             test("[200] Adds site", async () => {
                 const response = await request
-                    .post("/sites/production")
+                    .post("/sites/well")
                     .send(entries.sites.production);
 
-                const databaseQuery = await ProductionSite
+                const databaseQuery = await models.sites.well
                     .findById(response.body.document.id)
                     .exec();
 
@@ -1257,10 +1282,10 @@ describe("/sites", () => {
 
             test("[400] Missing name parameter", async () => {
                 const response = await request
-                    .post("/sites/production")
+                    .post("/sites/well")
                     .send({});
 
-                const query = await ProductionSite
+                const query = await models.sites.well
                     .find()
                     .exec();
 
@@ -1276,14 +1301,14 @@ describe("/sites", () => {
 
             test("[400] Non-unique site name", async () => {
                 await request
-                    .post("/sites/production")
+                    .post("/sites/well")
                     .send(entries.sites.production);
 
                 const response = await request
-                    .post("/sites/production")
+                    .post("/sites/well")
                     .send(entries.sites.production);
 
-                const query = await ProductionSite
+                const query = await models.sites.well
                     .find()
                     .exec();
 
@@ -1304,12 +1329,12 @@ describe("/sites", () => {
 
                 for (const name of names) {
                     await request
-                        .post("/sites/production")
+                        .post("/sites/well")
                         .send({ name: name });
                 }
 
                 const response = await request
-                    .get("/sites/production");
+                    .get("/sites/well");
 
                 expect(response.statusCode)
                     .toBe(200);
@@ -1323,7 +1348,7 @@ describe("/sites", () => {
 
             test("[200] Returns empty list when no sites exist", async () => {
                 const response = await request
-                    .get("/sites/production");
+                    .get("/sites/well");
 
                 expect(response.statusCode)
                     .toBe(200);
@@ -1340,12 +1365,12 @@ describe("/sites", () => {
             test("[200] Finds site", async () => {
                 const id = (
                     await request
-                        .post("/sites/production")
+                        .post("/sites/well")
                         .send(entries.sites.production)
                 ).body.document.id;
 
                 const response = await request
-                    .get(`/sites/production/${id}`);
+                    .get(`/sites/well/${id}`);
 
                 expect(response.statusCode)
                     .toBe(200);
@@ -1359,7 +1384,7 @@ describe("/sites", () => {
 
             test("[404] Site with specified ID doesn't exist", async () => {
                 const response = await request
-                    .get("/sites/production/non-existent-id");
+                    .get("/sites/well/non-existent-id");
 
                 expect(response.statusCode)
                     .toBe(404);

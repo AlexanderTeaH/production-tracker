@@ -1,13 +1,25 @@
-const mongoose       = require("mongoose");
-const ProductionSite = require("../../../sites/productionSite");
+const mongoose = require("mongoose");
+const WellSite = require("../../../sites/well");
 
 const waterProductionDailyReportSchema = mongoose.Schema({
-    site: {
+    date: {
+        type: Date,
+        required: true,
+        validate: {
+            validator: function (date) {
+                return date.getUTCHours() == 0
+                    && date.getUTCMinutes() == 0
+                    && date.getUTCSeconds() == 0
+                    && date.getUTCMilliseconds() == 0;
+            }
+        }
+    },
+    wellSite: {
         type: String,
         required: true,
-        validate: function (siteName) {
+        validate: function (wellSiteName) {
             return new Promise(function (resolve) {
-                ProductionSite.findOne({ name: siteName }, (error, result) => resolve(result ? true : false));
+                WellSite.findOne({ name: wellSiteName }, (error, result) => resolve(result ? true : false));
             });
         }
     },
@@ -34,18 +46,6 @@ const waterProductionDailyReportSchema = mongoose.Schema({
     totalDailyWeight: {
         type: Number,
         required: true
-    },
-    dailyReportDate: {
-        type: Date,
-        required: true,
-        validate: {
-            validator: function (date) {
-                return date.getUTCHours() == 0
-                    && date.getUTCMinutes() == 0
-                    && date.getUTCSeconds() == 0
-                    && date.getUTCMilliseconds() == 0;
-            }
-        }
     }
 },
 {

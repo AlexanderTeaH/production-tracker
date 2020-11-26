@@ -1,7 +1,7 @@
 const mongoose        = require("mongoose");
 const uniqueValidator = require("mongoose-unique-validator");
 
-const productionSiteSchema = mongoose.Schema({
+const wellSiteSchema = mongoose.Schema({
     name: {
         type: String,
         required: true,
@@ -12,6 +12,6 @@ const productionSiteSchema = mongoose.Schema({
     timestamps: true
 });
 
-productionSiteSchema.plugin(uniqueValidator);
+wellSiteSchema.plugin(uniqueValidator);
 
-module.exports = mongoose.model("ProductionSite", productionSiteSchema, "sites.production");
+module.exports = mongoose.model("WellSite", wellSiteSchema, "sites.well");

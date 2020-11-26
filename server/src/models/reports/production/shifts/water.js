@@ -1,13 +1,13 @@
-const mongoose       = require("mongoose");
-const ProductionSite = require("../../../sites/productionSite");
+const mongoose = require("mongoose");
+const WellSite = require("../../../sites/well");
 
 const waterProductionShiftReportSchema = mongoose.Schema({
-    site: {
+    wellSite: {
         type: String,
         required: true,
-        validate: function (siteName) {
+        validate: function (wellSiteName) {
             return new Promise(function (resolve) {
-                ProductionSite.findOne({ name: siteName }, (error, result) => resolve(result ? true : false));
+                WellSite.findOne({ name: wellSiteName }, (error, result) => resolve(result ? true : false));
             });
         }
     },
