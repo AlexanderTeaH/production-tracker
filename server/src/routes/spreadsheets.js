@@ -2,143 +2,87 @@ const router  = require("express").Router();
 const excelJS = require("exceljs");
 const utils   = require("../utils");
 
-const OilProductionDailyReport = require("../models/reports/production/daily/oil");
-const WaterProductionReport = require("../models/reports/production/daily/water");
-const OilTransportReport    = require("../models/reports/transport/oil");
-const WaterTransportReport  = require("../models/reports/transport/water");
-const ProductionSite        = require("../models/sites/productionSite");
+const models = {
+    sites: {
+        well: require("../models/sites/well")
+    },
+    production: {
+        daily: {
+            oil:   require("../models/reports/production/daily/oil"),
+            water: require("../models/reports/production/daily/water")
+        }
+    },
+    transport: {
+        oil: require("../models/reports/transport/oil")
+    },
+    injection: {
+        water: require("../models/reports/injection/water")
+    }
+};
 
-router.get("/dailyReport", async (request, response) => {
+router.get("/daily", async (request, response) => {
     try {
-        const date    = utils.parseDate(request.body.date);
-        const nextDay = new Date();
-        nextDay.setDate(date.getDate() + 1);
-
+        const date  = utils.parseDate(request.body.date);
         const query = await Promise.all([
-            ProductionSite
+            models.sites.well
                 .find()
                 .sort({ name: 1 })
                 .exec(),
-            OilProductionDailyReport
-                .where("dailyReportDate")
+            models.production.daily.oil
+                .where("date")
                 .equals(date)
                 .exec(),
-            WaterProductionReport
-                .where("dailyReportDate")
+            models.transport.oil
+                .where("date")
                 .equals(date)
                 .exec(),
-            OilTransportReport
-                .where("createdAt")
-                .gte(date)
-                .lt(nextDay),
-            WaterTransportReport
-                .where("createdAt")
-                .gte(date)
-                .lt(nextDay)
+            models.production.daily.water
+                .where("date")
+                .equals(date)
+                .exec(),
+            models.injection.water
+                .where("date")
+                .equals(date)
+                .exec()
         ]);
 
-        const rows      = utils.mergeReports(query[0], query[1], query[2], query[3], query[4]);
+        const rows      = linkReports(...query);
         const workbook  = new excelJS.Workbook();
         const worksheet = workbook.addWorksheet(date.toISOString().split("T")[0]);
 
-        worksheet.getCell("A1").value = "Site";
-        worksheet.getCell("A1").fill  = {
-            type: "pattern",
-            pattern: "solid",
-            fgColor: { argb: "ffaaaa" }
-        };
-
-        worksheet.mergeCells("B1:F1");
-        worksheet.getCell("B1").value = "Oil production";
-        worksheet.getCell("B1").fill  = {
-            type:    "pattern",
-            pattern: "solid",
-            fgColor: { argb: "aaffaa" }
-        };
-
-        worksheet.mergeCells("G1:J1");
-        worksheet.getCell("G1").value = "Water production";
-        worksheet.getCell("G1").fill  = {
-            type:    "pattern",
-            pattern: "solid",
-            fgColor: { argb: "aaaaff" }
-        };
-
-        worksheet.mergeCells("K1:O1");
-        worksheet.getCell("K1").value = "Oil transport";
-        worksheet.getCell("K1").fill = {
-            type:    "pattern",
-            pattern: "solid",
-            fgColor: { argb: "aaffaa" }
-        };
-
-        worksheet.mergeCells("P1:S1");
-        worksheet.getCell("P1").value = "Water transport";
-        worksheet.getCell("P1").fill = {
-            type:    "pattern",
-            pattern: "solid",
-            fgColor: { argb: "aaaaff" }
-        };
+        worksheet.getCell("B1").value = "Daily report for oil and water production";
+        worksheet.getCell("B3").value = "Oil production per day";
+        worksheet.getCell("D3").value = "Transported oil per day";
+        worksheet.getCell("F3").value = "Water production per day";
+        worksheet.getCell("G3").value = "Injected water per day";
+        worksheet.mergeCells("B1:C1");
+        worksheet.mergeCells("B3:C3");
+        worksheet.mergeCells("D3:E3");
+        worksheet.getRow(1).font      = { bold: true };
+        worksheet.getRow(1).height    = 30;
+        worksheet.getRow(3).font      = { bold: true };
+        worksheet.getRow(3).height    = 50;
+        worksheet.getRow(3).alignment = { horizontal: "center", vertical: "middle", wrapText: true };
 
         worksheet.columns = [
-            { key: "site", width: 10 },
-            
-            { key: "oilLevel",       width: 20 },
-            { key: "oilVolume",      width: 20 },
-            { key: "oilTemperature", width: 20 },
-            { key: "oilDensity",     width: 20 },
-            { key: "oilWeight",      width: 20 },
-            
-            { key: "waterLevel",   width: 20 },
-            { key: "waterVolume",  width: 20 },
-            { key: "waterDensity", width: 20 },
-            { key: "waterWeight",  width: 20 },
-            
-            { key: "oilTransportTo",          width: 10 },
-            { key: "oilTransportVolume",      width: 20 },
-            { key: "oilTransportTemperature", width: 20 },
-            { key: "oilTransportDensity",     width: 20 },
-            { key: "oilTransportWeight",      width: 20 },
-            
-            { key: "waterTransportTo",      width: 10 },
-            { key: "waterTransportVolume",  width: 20 },
-            { key: "waterTransportDensity", width: 20 },
-            { key: "waterTransportWeight",  width: 20 }
+            { key: "wellSite",              width: 20 },
+            { key: "oilProductionVolume",   width: 20 },
+            { key: "oilProductionWeight",   width: 20 },
+            { key: "oilTransportVolume",    width: 20 },
+            { key: "oilTransportWeight",    width: 20 },
+            { key: "waterProductionVolume", width: 20 },
+            { key: "waterInjectionVolume",  width: 20 }
         ];
 
-        worksheet.getRow(1).font      = { bold: true, size: 16 };
-        worksheet.getRow(1).height    = 30;
-        worksheet.getRow(1).alignment = { horizontal: "center", vertical: "middle" };
-
         worksheet.addRow({
-            site: "",
-            
-            oilLevel:       "Level (m)",
-            oilVolume:      "Volume (m³)",
-            oilTemperature: "Temperature (°C)",
-            oilDensity:     "Density (g/cm³)",
-            oilWeight:      "Weight (tonnes)",
-            
-            waterLevel:   "Level (m)",
-            waterVolume:  "Volume (m³)",
-            waterDensity: "Density (g/cm³)",
-            waterWeight:  "Weight (tonnes)",
-            
-            oilTransportTo:          "To",
-            oilTransportVolume:      "Volume (m³)",
-            oilTransportTemperature: "Temperature (°C)",
-            oilTransportDensity:     "Density (g/cm³)",
-            oilTransportWeight:      "Weight (tonnes)",
-            
-            waterTransportTo:      "To",
-            waterTransportVolume:  "Volume (m³)",
-            waterTransportDensity: "Density (g/cm³)",
-            waterTransportWeight:  "Weight (tonnes)"
+            wellSite:              "Well site",
+            oilProductionVolume:   "Volume (m³)",
+            oilProductionWeight:   "Weight (ton)",
+            oilTransportVolume:    "Volume (m³)",
+            oilTransportWeight:    "Weight (ton)",
+            waterProductionVolume: "Volume (m³)",
+            waterInjectionVolume:  "Volume (m³)"
         });
-        
-        worksheet.getRow(2).font      = { bold: true, size: 12 };
-        worksheet.getRow(2).height    = 20;
-        worksheet.getRow(2).alignment = { horizontal: "center", vertical: "middle" };
 
         for (const row of rows) {
             worksheet.addRow(row);
@@ -152,11 +96,68 @@ router.get("/dailyReport", async (request, response) => {
     }
 
     catch (error) {
-        console.log(`Error occured in "GET /spreadsheets/dailyReport": ${error}`);
+        console.log(`Error occured in "GET /spreadsheets/daily": ${error}`);
         response
             .status(500)
             .json({ message: "Internal server error" });
     }
 });
+
+const linkReports = (wellSites, dailyOilReports, oilTransportReports, dailyWaterReports, waterInjectionReports) => {
+    const wellSiteData = {};
+
+    for (const wellSite of wellSites) {
+        wellSiteData[wellSite.name] = {
+            wellSite: wellSite.name
+        };
+    }
+
+    for (const dailyOilReport of dailyOilReports) {
+        const wellSite         = dailyOilReport.wellSite;
+        wellSiteData[wellSite] = Object.assign(wellSiteData[wellSite], {
+            oilProductionVolume: dailyOilReport.totalDailyVolume,
+            oilProductionWeight: dailyOilReport.totalDailyWeight
+        });
+    }
+
+    for (const oilTransportReport of oilTransportReports) {
+        const wellSite = oilTransportReport.from;
+        
+        if ("oilTransportVolume" in wellSiteData[wellSite]) {
+            wellSiteData[wellSite].oilTransportVolume += oilTransportReport.volume;
+            wellSiteData[wellSite].oilTransportWeight += oilTransportReport.weight;
+        }
+
+        else {
+            wellSiteData[wellSite] = Object.assign(wellSiteData[wellSite], {
+                oilTransportVolume: oilTransportReport.volume,
+                oilTransportWeight: oilTransportReport.weight
+            });
+        }
+    }
+
+    for (const dailyWaterReport of dailyWaterReports) {
+        const wellSite         = dailyWaterReport.wellSite;
+        wellSiteData[wellSite] = Object.assign(wellSiteData[wellSite], {
+            waterProductionVolume: dailyWaterReport.totalDailyVolume
+        });
+    }
+
+    for (const waterInjectionReport of waterInjectionReports) {
+        const wellSite = waterInjectionReport.from;
+
+        if ("waterInjectionVolume" in wellSiteData[wellSite]) {
+            wellSiteData[wellSite].waterInjectionVolume += waterInjectionReport.volume;
+        }
+
+        else {
+            wellSiteData[wellSite] = Object.assign(wellSiteData[wellSite], {
+                waterInjectionVolume: waterInjectionReport.volume
+            });
+        }
+    }
+
+    return Object.values(wellSiteData);
+};
 
 module.exports = router;
