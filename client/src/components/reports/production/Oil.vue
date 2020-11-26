@@ -93,6 +93,24 @@
                         required
                         :rules="[v => !!v || 'Weight is required', numberRule]"
                     ></v-text-field>
+                    <v-text-field
+                        :disabled="!isDailyReport"
+                        v-model="totalVolume"
+                        label="Total volume for the day (m³)"
+                        prepend-icon="local_gas_station"
+                        outlined
+                        required
+                        :rules="[v => !!v || 'Total volume is required', numberRule]"
+                    ></v-text-field>
+                    <v-text-field
+                        :disabled="!isDailyReport"
+                        v-model="totalWeight"
+                        label="Total weight for the day (tons)"
+                        prepend-icon="fitness_center"
+                        outlined
+                        required
+                        :rules="[v => !!v || 'Total weight is required', numberRule]"
+                    ></v-text-field>
                     <v-btn
                         x-large
                         color="primary"
