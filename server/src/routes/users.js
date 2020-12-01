@@ -1,6 +1,8 @@
 const router   = require("express").Router();
-const utils    = require("../utils");
 const mongoose = require("mongoose");
+const bcrypt   = require("bcrypt");
+const jwt      = require("jsonwebtoken");
+const utils    = require("../utils");
 
 const User = require("../models/users/user");
 
@@ -31,6 +33,70 @@ router.post("/", async (request, response) => {
                 .status(500)
                 .json({ message: "Internal server error" });
         }
+    }
+});
+
+router.post("/login", async (request, response) => {
+    try {
+        const user = await User
+            .findOne({ name: request.body.name })
+            .exec();
+
+        if (!user || !await bcrypt.compare(request.body.password, user.password)) {
+            response
+                .status(401)
+                .json({ message: "Unauthorized" });
+        }
+
+        else {
+            const token = jwt.sign({
+                username: request.body.username
+            },
+            process.env.JWT_KEY,
+            {
+                expiresIn: "24h"
+            });
+
+            response
+                .status(200)
+                .cookie("authorizationToken", token,
+                    {
+                        httpOnly: true,
+                        maxAge:   24 * 60 * 60 * 1000,
+                        path:     "/",
+                        sameSite: "strict"
+                    })
+                .json({ message: "Logged in" });
+        }
+    }
+
+    catch (error) {
+        console.log(`Error occured in "${request.method} ${request.originalUrl}": ${error}`);
+        response
+            .status(500)
+            .json({ message: "Internal server error" });
+    }
+});
+
+router.post("/logout", async (request, response) => {
+    try {
+        response
+            .status(200)
+            .cookie("authorizationToken", "",
+                {
+                    httpOnly: true,
+                    maxAge:   -1,
+                    path:     "/",
+                    sameSite: "strict"
+                })
+            .json({ message: "Logged out" });
+    }
+
+    catch (error) {
+        console.log(`Error occured in "${request.method} ${request.originalUrl}": ${error}`);
+        response
+            .status(500)
+            .json({ message: "Internal server error" });
     }
 });
 

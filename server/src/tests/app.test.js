@@ -176,11 +176,15 @@ const createBadParameterTypeRequests = (url, validEntry) => {
 };
 
 describe("/users", () => {
+    const addUser = async () => {
+        return request
+            .post("/users")
+            .send(entries.users.user);
+    };
+
     describe("POST", () => {
         test("[201] Adds user", async () => {
-            const response = await request
-                .post("/users")
-                .send(entries.users.user);
+            const response = await addUser();
 
             expect(response.statusCode)
                 .toBe(201);
@@ -208,13 +212,8 @@ describe("/users", () => {
         });
 
         test("[400] Non-unique user name", async () => {
-            await request
-                .post("/users")
-                .send(entries.users.user);
-
-            const response = await request
-                .post("/users")
-                .send(entries.users.user);
+            await addUser();
+            const response = await addUser();
 
             expect(response.statusCode)
                 .toBe(400);
@@ -226,10 +225,7 @@ describe("/users", () => {
 
     describe("GET /:name", () => {
         test("[200] Finds user", async () => {
-            await request
-                .post("/users")
-                .send(entries.users.user);
-            
+            await addUser();
             const response = await request
                 .get(`/users/${entries.users.user.name}`);
 
@@ -244,6 +240,61 @@ describe("/users", () => {
             
             expect(response.body.document.password)
                 .toBe(undefined);
+        });
+    });
+
+    describe("/login", () => {
+        describe("POST", () => {
+            test("[200] Logs in", async () => {
+                await addUser();
+                const response = await request
+                    .post("/users/login")
+                    .send(entries.users.user);
+                
+                expect(response.statusCode)
+                    .toBe(200);
+                
+                expect(response.body.message)
+                    .toBe("Logged in");
+            });
+
+            test("[401] Specified user doesn't exist", async () => {
+                const response = await request
+                    .post("/users/login")
+                    .send(entries.users.user);
+
+                expect(response.statusCode)
+                    .toBe(401);
+
+                expect(response.body.message)
+                    .toBe("Unauthorized");
+            });
+
+            test("[401] Invalid user name", async () => {
+                await addUser();
+                const response = await request
+                    .post("/users/login")
+                    .send({ name: "invalid", password: entries.users.user.password });
+
+                expect(response.statusCode)
+                    .toBe(401);
+
+                expect(response.body.message)
+                    .toBe("Unauthorized");
+            });
+
+            test("[401] Invalid user password", async () => {
+                await addUser();
+                const response = await request
+                    .post("/users/login")
+                    .send({ name: entries.users.user.name, password: "invalid" });
+
+                expect(response.statusCode)
+                    .toBe(401);
+
+                expect(response.body.message)
+                    .toBe("Unauthorized");
+            });
         });
     });
 });
