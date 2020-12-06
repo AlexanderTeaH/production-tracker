@@ -20,9 +20,9 @@ const models = {
     }
 };
 
-router.get("/daily", async (request, response) => {
+router.get("/daily/:date", async (request, response) => {
     try {
-        const date  = utils.parseDate(request.body.date);
+        const date  = utils.parseDate(request.params.date);
         const query = await Promise.all([
             models.sites.well
                 .find()
@@ -103,9 +103,9 @@ router.get("/daily", async (request, response) => {
     }
 });
 
-router.get("/monthly", async (request, response) => {
+router.get("/monthly/:year", async (request, response) => {
     try {
-        const year  = request.body.year;
+        const year  = request.params.year;
         const query = await Promise.all([
             models.sites.well
                 .find()
@@ -239,7 +239,7 @@ router.get("/monthly", async (request, response) => {
     }
 
     catch (error) {
-        console.log(`Error occured in "GET /spreadsheets/daily": ${error}`);
+        console.log(`Error occured in "GET /spreadsheets/monthly": ${error}`);
         response
             .status(500)
             .json({ message: "Internal server error" });
