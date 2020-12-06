@@ -7,26 +7,31 @@
                 </v-toolbar-title>
                 <v-spacer></v-spacer>
                 <v-toolbar-items class="hidden-sm-and-down">
-                    <v-btn text>
-                        <router-link to="/">Home</router-link>
+                    <v-btn v-if="isLoggedIn" text @click="page = 'spreadsheetsForm'">
+                        Download spreadsheets
+                    </v-btn>
+                    <v-btn v-if="isLoggedIn" text @click="page = 'reportForm'">
+                        Submit reports
                     </v-btn>
                     <v-btn v-if="!isLoggedIn" text>
                         <router-link to="/login">Log in</router-link>
                     </v-btn>
-                    <v-btn v-if="isLoggedIn" color="red" dark @click="logout">
+                    <v-btn v-if="isLoggedIn" text @click="logout">
                         Log out
                         <v-icon dark right>power_settings_new</v-icon>
                     </v-btn>
                 </v-toolbar-items>
             </v-app-bar>
-        <ReportForm/>
+        <ReportForm v-if="page === 'reportForm'"/>
+        <SpreadsheetsForm v-if="page === 'spreadsheetsForm'"/>
     </div>
 </template>
 
 <script>
 // @ is an alias to /src
-import ReportForm from "@/components/ReportForm.vue";
-import axios      from "axios";
+import ReportForm       from "@/components/ReportForm.vue";
+import SpreadsheetsForm from "@/components/SpreadsheetsForm.vue";
+import axios            from "axios";
 
 const baseURL = "http://127.0.0.1";
 
@@ -34,12 +39,14 @@ export default {
     name: "Home",
 
     components: {
-        ReportForm
+        ReportForm,
+        SpreadsheetsForm
     },
 
     data: () => ({
         username:   null,
-        isLoggedIn: false
+        isLoggedIn: false,
+        page:       null
     }),
 
     created() {
@@ -50,10 +57,14 @@ export default {
                 this.username   = loggedInAccount.lastUsername;
                 this.isLoggedIn = true;
             }
+
+            else {
+                this.$router.push("/login");
+            }
         }
 
         catch (error) {
-            console.log(error);
+            this.$router.push("/login");
         }
     },
 
