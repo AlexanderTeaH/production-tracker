@@ -92,7 +92,7 @@ export default {
                 if (response.status == 200) {
                     localStorage.loggedInAccount = JSON.stringify({
                         lastUsername: this.username,
-                        expiry:       (new Date()).getTime() + 24 * 60 * 60 * 1000
+                        expiry:       (new Date()).getTime() + 16 * 60 * 60 * 1000
                     });
 
                     this.$router.push("/");

@@ -54,7 +54,7 @@ router.post("/login", async (request, response) => {
             },
             process.env.JWT_KEY,
             {
-                expiresIn: "24h"
+                expiresIn: "16h"
             });
 
             response
@@ -62,7 +62,7 @@ router.post("/login", async (request, response) => {
                 .cookie("authorizationToken", token,
                     {
                         httpOnly: true,
-                        maxAge:   24 * 60 * 60 * 1000,
+                        maxAge:   16 * 60 * 60 * 1000,
                         path:     "/",
                         sameSite: "strict"
                     })
