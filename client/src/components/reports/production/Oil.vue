@@ -70,6 +70,14 @@
                         :rules="[v => !!v || 'Volume is required', numberRule]"
                     ></v-text-field>
                     <v-text-field
+                        v-model="weight"
+                        label="Weight in tank (tons)"
+                        prepend-icon="fitness_center"
+                        outlined
+                        required
+                        :rules="[v => !!v || 'Weight is required', numberRule]"
+                    ></v-text-field>
+                    <v-text-field
                         v-model="temperature"
                         label="Temperature (°C)"
                         prepend-icon="filter_drama"
@@ -84,14 +92,6 @@
                         outlined
                         required
                         :rules="[v => !!v || 'Density is required', numberRule]"
-                    ></v-text-field>
-                    <v-text-field
-                        v-model="weight"
-                        label="Weight in tank (tons)"
-                        prepend-icon="fitness_center"
-                        outlined
-                        required
-                        :rules="[v => !!v || 'Weight is required', numberRule]"
                     ></v-text-field>
                     <v-text-field
                         :disabled="!isDailyReport"

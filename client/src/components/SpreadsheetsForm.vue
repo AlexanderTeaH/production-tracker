@@ -1,7 +1,7 @@
 <template>
     <v-card class="ma-6">
         <v-card-title>
-            <h3>Add report</h3>
+            <h3>Download spreadsheet</h3>
         </v-card-title>
         <v-card-text>
             <v-form

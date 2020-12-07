@@ -70,6 +70,14 @@
                         :rules="[v => !!v || 'Volume is required', numberRule]"
                     ></v-text-field>
                     <v-text-field
+                        v-model="weight"
+                        label="Weight in tank (tons)"
+                        prepend-icon="fitness_center"
+                        outlined
+                        required
+                        :rules="[v => !!v || 'Weight is required', numberRule]"
+                    ></v-text-field>
+                    <v-text-field
                         v-model="density"
                         label="Density (g/cm³)"
                         prepend-icon="bubble_chart"
@@ -78,12 +86,22 @@
                         :rules="[v => !!v || 'Density is required', numberRule]"
                     ></v-text-field>
                     <v-text-field
-                        v-model="weight"
-                        label="Weight in tank (tons)"
+                        :disabled="!isDailyReport"
+                        v-model="totalVolume"
+                        label="Total volume for the day (m³)"
+                        prepend-icon="local_gas_station"
+                        outlined
+                        required
+                        :rules="[v => !!v || 'Total volume is required', numberRule]"
+                    ></v-text-field>
+                    <v-text-field
+                        :disabled="!isDailyReport"
+                        v-model="totalWeight"
+                        label="Total weight for the day (tons)"
                         prepend-icon="fitness_center"
                         outlined
                         required
-                        :rules="[v => !!v || 'Weight is required', numberRule]"
+                        :rules="[v => !!v || 'Total weight is required', numberRule]"
                     ></v-text-field>
                     <v-btn
                         x-large
