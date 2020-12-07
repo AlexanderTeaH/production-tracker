@@ -32,6 +32,9 @@
                                 outlined
                                 required
                                 :rules="[v => !!v || 'Password is required']"
+                                :type="showPassword ? 'text' : 'password'"
+                                :append-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                                @click:append="showPassword = !showPassword"
                             ></v-text-field>
                             <v-btn
                                 x-large
@@ -57,9 +60,10 @@ export default {
     name: "Login",
 
     data: () => ({
-        username: null,
-        password: null,
-        isValid:  true
+        username:     null,
+        password:     null,
+        showPassword: false,
+        isValid:      true
     }),
 
     created() {
