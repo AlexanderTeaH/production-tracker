@@ -65,6 +65,7 @@ const entries = {
             daily: {
                 oil: {
                     date:             "2020-11-21T00:00:00.000Z",
+                    productionPeriod: 24 * 60,
                     wellSite:         "X-1",
                     level:            1,
                     temperature:      1,
@@ -76,6 +77,7 @@ const entries = {
                 },
                 water: {
                     date:             "2020-11-21T00:00:00.000Z",
+                    productionPeriod: 24 * 60,
                     wellSite:         "X-1",
                     level:            1,
                     density:          1,
