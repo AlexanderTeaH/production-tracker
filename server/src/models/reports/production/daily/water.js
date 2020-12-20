@@ -14,6 +14,10 @@ const waterProductionDailyReportSchema = mongoose.Schema({
             }
         }
     },
+    productionPeriod: {
+        type: Number,
+        required: true
+    },
     wellSite: {
         type: String,
         required: true,
