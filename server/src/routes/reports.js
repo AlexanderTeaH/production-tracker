@@ -3,14 +3,8 @@ const utils  = require("../utils");
 
 const models = {
     production: {
-        daily: {
-            oil:   require("../models/reports/production/daily/oil"),
-            water: require("../models/reports/production/daily/water")
-        },
-        shifts: {
-            oil:   require("../models/reports/production/shifts/oil"),
-            water: require("../models/reports/production/shifts/water")
-        }
+        daily: require("../models/reports/production/daily"),
+        tanks: require("../models/reports/production/tanks")
     },
     transport: {
         oil:   require("../models/reports/transport/oil"),
@@ -21,36 +15,20 @@ const models = {
     }
 };
 
-router.post("/production/daily/oil", (request, response) => {
-    utils.saveDocument(request, response, models.production.daily.oil, "Added report");
+router.post("/production/daily", (request, response) => {
+    utils.saveDocument(request, response, models.production.daily, "Added report");
 });
 
-router.get("/production/daily/oil/:id", (request, response) => {
-    utils.getDocument(request, response, models.production.daily.oil, "Found report", "Report doesn't exist");
+router.get("/production/daily/:id", (request, response) => {
+    utils.getDocument(request, response, models.production.daily, "Found report", "Report doesn't exist");
 });
 
-router.post("/production/daily/water", (request, response) => {
-    utils.saveDocument(request, response, models.production.daily.water, "Added report");
+router.post("/production/tanks", (request, response) => {
+    utils.saveDocument(request, response, models.production.tanks, "Added report");
 });
 
-router.get("/production/daily/water/:id", (request, response) => {
-    utils.getDocument(request, response, models.production.daily.water, "Found report", "Report doesn't exist");
-});
-
-router.post("/production/shifts/oil", (request, response) => {
-    utils.saveDocument(request, response, models.production.shifts.oil, "Added report");
-});
-
-router.get("/production/shifts/oil/:id", (request, response) => {
-    utils.getDocument(request, response, models.production.shifts.oil, "Found report", "Report doesn't exist");
-});
-
-router.post("/production/shifts/water", (request, response) => {
-    utils.saveDocument(request, response, models.production.shifts.water, "Added report");
-});
-
-router.get("/production/shifts/water/:id", (request, response) => {
-    utils.getDocument(request, response, models.production.shifts.water, "Found report", "Report doesn't exist");
+router.get("/production/tanks/:id", (request, response) => {
+    utils.getDocument(request, response, models.production.tanks, "Found report", "Report doesn't exist");
 });
 
 router.post("/transport/oil", (request, response) => {
