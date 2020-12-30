@@ -10,7 +10,7 @@
                     <v-btn v-if="isLoggedIn" text @click="page = 'spreadsheetsForm'">
                         Download spreadsheets
                     </v-btn>
-                    <v-btn v-if="isLoggedIn" text @click="page = 'reportForm'">
+                    <v-btn v-if="isLoggedIn" text @click="page = 'addReport'">
                         Submit reports
                     </v-btn>
                     <v-btn v-if="!isLoggedIn" text>
@@ -22,14 +22,14 @@
                     </v-btn>
                 </v-toolbar-items>
             </v-app-bar>
-        <ReportForm v-if="page === 'reportForm'"/>
+        <AddReport v-if="page === 'addReport'"/>
         <SpreadsheetsForm v-if="page === 'spreadsheetsForm'"/>
     </div>
 </template>
 
 <script>
 // @ is an alias to /src
-import ReportForm       from "@/components/ReportForm.vue";
+import AddReport        from "@/components/AddReport.vue";
 import SpreadsheetsForm from "@/components/SpreadsheetsForm.vue";
 import axios            from "axios";
 
@@ -39,7 +39,7 @@ export default {
     name: "Home",
 
     components: {
-        ReportForm,
+        AddReport,
         SpreadsheetsForm
     },
 

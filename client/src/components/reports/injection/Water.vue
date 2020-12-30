@@ -28,6 +28,7 @@
                             label="Date"
                             prepend-icon="event"
                             readonly
+                            outlined
                             :value="date"
                             v-on="on"
                         ></v-text-field>
@@ -103,22 +104,16 @@ export default {
     name: "WaterInjectionReport",
 
     data: () => ({
-        // Internal form values
-        dateMenu: false,
         isValid:  true,
-
-        // Fetched data
-        wells:    [],
-        
-        // Form values
+        dateMenu: false,
         date:     new Date().toISOString().split("T")[0],
+        wells:    [],
         from:     null,
         to:       null,
         volume:   null,
         density:  1.13,
         weight:   null,
 
-        // Validation rules
         numberRule: (v) => {
             if (!isNaN(v)) {
                 return true;
@@ -134,24 +129,20 @@ export default {
 
     methods: {
         async fetchData() {
-            this.wells = (await axios.get(`${baseURL}/sites/production`))
+            this.wells = (await axios.get(`${baseURL}/sites/well`))
                 .data.documents.map(site => site.name);
         },
 
         async submit() {
-            let body = {
-                from:    this.from,
-                to:      this.to,
-                volume:  this.volume,
-                density: this.density,
-                weight:  this.weight
-            };
-
-            if (this.isDailyReport) {
-                body.dailyReportDate = this.date;
-            }
-
-            const response = await axios.post(`${baseURL}/reports/injection/water`, body);
+            const response = await axios
+                .post(`${baseURL}/reports/injection/water`, {
+                    date:    this.date,
+                    from:    this.from,
+                    to:      this.to,
+                    volume:  this.volume,
+                    density: this.density,
+                    weight:  this.weight
+                });
             
             if (response.status == 201) {
                 this.$refs.form.reset();
