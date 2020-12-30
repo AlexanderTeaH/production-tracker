@@ -22,6 +22,9 @@ const oilTankSchema = mongoose.Schema({
         type: Number,
         required: true
     }
+},
+{
+    _id : false
 });
 
 const waterTankSchema = mongoose.Schema({
@@ -41,6 +44,23 @@ const waterTankSchema = mongoose.Schema({
         type: Number,
         required: true
     }
+},
+{
+    _id : false
+});
+
+const combinedTanksSchema = mongoose.Schema({
+    oil: {
+        type: [oilTankSchema],
+        required: true
+    },
+    water: {
+        type: [waterTankSchema],
+        required: true
+    }
+},
+{
+    _id : false
 });
 
 const tanksReportSchema = mongoose.Schema({
@@ -54,10 +74,7 @@ const tanksReportSchema = mongoose.Schema({
         }
     },
     tanks: {
-        type: {
-            oil: [oilTankSchema],
-            water: [waterTankSchema]
-        },
+        type: combinedTanksSchema,
         required: true
     }
 },

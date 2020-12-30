@@ -60,13 +60,20 @@ const entries = {
                 wellSite:         "X-1",
                 date:             "2020-12-28T00:00:00.000Z",
                 productionPeriod: 24 * 60,
-                totalDailyVolume: {
-                    oil:   1,
-                    water: 1
-                },
-                totalDailyWeight: {
-                    oil:   1,
-                    water: 1
+                tanks: {
+                    oil: [{
+                        level:       1,
+                        volume:      1,
+                        temperature: 1,
+                        density:     1,
+                        weight:      1
+                    }],
+                    water: [{
+                        level:   1,
+                        volume:  1,
+                        density: 1,
+                        weight:  1
+                    }]
                 }
             },
             tanks: {
@@ -292,12 +299,13 @@ describe("/reports", () => {
         ]);
     };
 
+    // TO-DO: Create more complicated missing nested parameter tests
+
     describe("/production", () => {
         describe("/daily", () => {
             describe("POST", () => {
                 test("[201] Adds report", async () => {
                     await addWellSites();
-
                     const response = await request
                         .post("/reports/production/daily")
                         .send(entries.reports.production.daily);
@@ -309,30 +317,39 @@ describe("/reports", () => {
                         .toBe("Added report");
                     
                     expect(response.body.document)
-                        .toMatchObject(entries.reports.production.daily);
+                        .toMatchObject({
+                            wellSite:         entries.reports.production.daily.wellSite,
+                            productionPeriod: entries.reports.production.daily.productionPeriod
+                        });
                     
-                    const databaseQuery = await models.production.daily
-                        .findById(response.body.document.id)
-                        .exec();
-                    
-                    // Fixes some unexplained date comparison issue
-                    let    expected = JSON.parse(JSON.stringify(entries.reports.production.daily));
-                    delete expected.date;
+                    const databaseQueries = await Promise.all([
+                        models.production.daily
+                            .findById(response.body.document.id)
+                            .exec(),
+                        models.production.tanks
+                            .findById(response.body.document.tanksReportID)
+                            .exec()
+                    ]);
 
-                    expect(databaseQuery)
-                        .toMatchObject(expected);
+                    expect(databaseQueries[0].toJSON())
+                        .toMatchObject({
+                            wellSite:         entries.reports.production.daily.wellSite,
+                            productionPeriod: entries.reports.production.daily.productionPeriod
+                        });
                     
-                    expect(new Date(databaseQuery.date))
-                        .toEqual(new Date(entries.reports.production.daily.date));
+                    expect(databaseQueries[0].tanksReportID.toString())
+                        .toBe(response.body.document.tanksReportID);
+                    
+                    expect(databaseQueries[1].toJSON())
+                        .toMatchObject({
+                            wellSite: entries.reports.production.daily.wellSite,
+                            tanks:    entries.reports.production.daily.tanks,
+                        });
                 });
 
                 test("[400] Missing parameters", async () => {
                     await addWellSites();
-
-                    const responses     = await createMissingParameterRequests("/reports/production/daily", entries.reports.production.daily);
-                    const databaseQuery = await models.production.daily
-                        .find()
-                        .exec();
+                    const responses = await createMissingParameterRequests("/reports/production/daily", entries.reports.production.daily);
 
                     for (const response of responses) {
                         expect(response.statusCode)
@@ -342,17 +359,24 @@ describe("/reports", () => {
                             .toBe("Bad request");
                     }
 
-                    expect(databaseQuery.length)
-                        .toBe(0);
+                    const databaseQueries = await Promise.all([
+                        models.production.daily
+                            .find()
+                            .exec(),
+                        models.production.tanks
+                            .find()
+                            .exec()
+                    ]);
+
+                    for (const query of databaseQueries) {
+                        expect(query.length)
+                            .toBe(0);
+                    }
                 });
 
                 test("[400] Bad parameter types", async () => {
                     await addWellSites();
-
-                    const responses     = await createBadParameterTypeRequests("/reports/production/daily", entries.reports.production.daily);
-                    const databaseQuery = await models.production.daily
-                        .find()
-                        .exec();
+                    const responses = await createBadParameterTypeRequests("/reports/production/daily", entries.reports.production.daily);
 
                     for (const response of responses) {
                         expect(response.statusCode)
@@ -362,13 +386,23 @@ describe("/reports", () => {
                             .toBe("Bad request");
                     }
 
-                    expect(databaseQuery.length)
-                        .toBe(0);
+                    const databaseQueries = await Promise.all([
+                        models.production.daily
+                            .find()
+                            .exec(),
+                        models.production.tanks
+                            .find()
+                            .exec()
+                    ]);
+
+                    for (const query of databaseQueries) {
+                        expect(query.length)
+                            .toBe(0);
+                    }
                 });
 
                 test("[400] Specified site doesn't exist", async () => {
                     await addWellSites();
-
                     const response = await request
                         .post("/reports/production/daily")
                         .send({
@@ -385,29 +419,34 @@ describe("/reports", () => {
                             }
                         });
 
-                    const databaseQuery = await models.production.daily
-                        .find()
-                        .exec();
-
                     expect(response.statusCode)
                         .toBe(400);
 
                     expect(response.body.message)
                         .toBe("Bad request");
 
-                    expect(databaseQuery.length)
-                        .toBe(0);
+                    const databaseQueries = await Promise.all([
+                        models.production.daily
+                            .find()
+                            .exec(),
+                        models.production.tanks
+                            .find()
+                            .exec()
+                    ]);
+
+                    for (const query of databaseQueries) {
+                        expect(query.length)
+                            .toBe(0);
+                    }
                 });
             });
 
             describe("GET /:id", () => {
                 test("[200] Finds report", async () => {
                     await addWellSites();
-
-                    const id = (
-                        await request
-                            .post("/reports/production/daily")
-                            .send(entries.reports.production.daily)
+                    const id = (await request
+                        .post("/reports/production/daily")
+                        .send(entries.reports.production.daily)
                     ).body.document.id;
 
                     const response = await request
@@ -420,7 +459,13 @@ describe("/reports", () => {
                         .toBe("Found report");
 
                     expect(response.body.document)
-                        .toMatchObject(entries.reports.production.daily);
+                        .toMatchObject({
+                            wellSite:         entries.reports.production.daily.wellSite,
+                            productionPeriod: entries.reports.production.daily.productionPeriod
+                        });
+                    
+                    expect(response.body.document.tanksReportID)
+                        .toBeDefined();
                 });
 
                 test("[404] Report with specified ID doesn't exist", async () => {
@@ -440,7 +485,6 @@ describe("/reports", () => {
             describe("POST", () => {
                 test("[201] Adds report", async () => {
                     await addWellSites();
-
                     const response = await request
                         .post("/reports/production/tanks")
                         .send(entries.reports.production.tanks);
@@ -458,7 +502,7 @@ describe("/reports", () => {
                         .findById(response.body.document.id)
                         .exec();
 
-                    expect(databaseQuery)
+                    expect(databaseQuery.toJSON())
                         .toMatchObject(entries.reports.production.tanks);
                 });
 

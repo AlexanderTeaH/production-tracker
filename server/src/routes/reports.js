@@ -1,5 +1,6 @@
-const router = require("express").Router();
-const utils  = require("../utils");
+const router   = require("express").Router();
+const mongoose = require("mongoose");
+const utils    = require("../utils");
 
 const models = {
     production: {
@@ -15,8 +16,56 @@ const models = {
     }
 };
 
-router.post("/production/daily", (request, response) => {
-    utils.saveDocument(request, response, models.production.daily, "Added report");
+// Add additional tests for POST "production/daily"
+
+router.post("/production/daily", async (request, response) => {
+    let tanksReportID = null;
+
+    try {
+        const tanksReport = new models.production.tanks({
+            wellSite: request.body.wellSite,
+            tanks:    request.body.tanks
+        });
+
+        await tanksReport.save();
+        tanksReportID = tanksReport._id;
+
+        const dailyReport = new models.production.daily({
+            wellSite:         request.body.wellSite,
+            date:             request.body.date,
+            productionPeriod: request.body.productionPeriod,
+            tanksReportID:    tanksReportID
+        });
+
+        await dailyReport.save();
+        response
+            .status(201)
+            .json({
+                message:  "Added report",
+                document: utils.documentToJSON(dailyReport)
+            });
+    }
+
+    catch (error) {
+        if (error instanceof mongoose.Error.ValidationError) {
+            if (tanksReportID !== null) {
+                await models.production.tanks
+                    .findByIdAndDelete(tanksReportID)
+                    .exec();
+            }
+
+            response
+                .status(400)
+                .json({ message: "Bad request" });
+        }
+
+        else {
+            console.log(`Error occured in "${request.method} ${request.originalUrl}": ${error}`);
+            response
+                .status(500)
+                .json({ message: "Internal server error" });
+        }
+    }
 });
 
 router.get("/production/daily/:id", (request, response) => {

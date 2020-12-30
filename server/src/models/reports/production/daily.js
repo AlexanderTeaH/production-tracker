@@ -1,5 +1,6 @@
-const mongoose = require("mongoose");
-const WellSite = require("../../sites/well");
+const mongoose    = require("mongoose");
+const WellSite    = require("../../sites/well");
+const TanksReport = require("../production/tanks");
 
 const dailyReportSchema = mongoose.Schema({
     wellSite: {
@@ -25,33 +26,18 @@ const dailyReportSchema = mongoose.Schema({
     },
     productionPeriod: { // minutes
         type: Number,
-        required: true
+        required: true,
+        min: 0,
+        max: 24 * 60
     },
-    totalDailyVolume: {
-        type: {
-            oil: {
-                type: Number,
-                required: true
-            },
-            water: {
-                type: Number,
-                required: true
-            }
-        },
-        required: true
-    },
-    totalDailyWeight: {
-        type: {
-            oil: {
-                type: Number,
-                required: true
-            },
-            water: {
-                type: Number,
-                required: true
-            }
-        },
-        required: true
+    tanksReportID: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        validate: function (reportID) {
+            return new Promise(function (resolve) {
+                TanksReport.findById(reportID, (error, result) => resolve(result ? true : false));
+            });
+        }
     }
 },
 {
