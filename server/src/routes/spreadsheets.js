@@ -7,20 +7,203 @@ const models = {
         well: require("../models/sites/well")
     },
     production: {
-        daily: {
-            oil:   require("../models/reports/production/daily/oil"),
-            water: require("../models/reports/production/daily/water")
-        }
+        daily: require("../models/reports/production/daily"),
+        tanks: require("../models/reports/production/tanks")
     },
     transport: {
-        oil: require("../models/reports/transport/oil")
+        oil:   require("../models/reports/transport/oil"),
+        water: require("../models/reports/transport/water")
     },
     injection: {
         water: require("../models/reports/injection/water")
     }
 };
 
+// Change to involve temperature
+
+function convertVolumeTo15C(volume, temperature) {
+    return volume;
+}
+
+// Use tank contents from daily report and transportation for given date
+
 router.get("/daily/:date", async (request, response) => {
+    try {
+        const date      = utils.parseDate(request.params.date);
+        const wellSites = await models.sites.well
+            .find()
+            .sort({ name: 1 })
+            .exec();
+
+        const workbook  = new excelJS.Workbook();
+        const worksheet = workbook.addWorksheet(date.toISOString().split("T")[0]);
+
+        worksheet.getCell("B1").value = "Daily report for oil and water production";
+        worksheet.getCell("B3").value = "Oil production per day";
+        worksheet.getCell("D3").value = "Transported oil per day";
+        worksheet.getCell("F3").value = "Water production per day";
+        worksheet.getCell("G3").value = "Injected water per day";
+        worksheet.mergeCells("B1:C1");
+        worksheet.mergeCells("B3:C3");
+        worksheet.mergeCells("D3:E3");
+        worksheet.getRow(1).font      = { bold: true };
+        worksheet.getRow(1).height    = 30;
+        worksheet.getRow(3).font      = { bold: true };
+        worksheet.getRow(3).height    = 50;
+        worksheet.getRow(3).alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+
+        worksheet.columns = [
+            { key: "wellSite",              width: 20 },
+            { key: "oilProductionVolume",   width: 20 },
+            { key: "oilProductionWeight",   width: 20 },
+            { key: "oilTransportVolume",    width: 20 },
+            { key: "oilTransportWeight",    width: 20 },
+            { key: "waterProductionVolume", width: 20 },
+            { key: "waterInjectionVolume",  width: 20 }
+        ];
+
+        worksheet.addRow({
+            wellSite:              "Well site",
+            oilProductionVolume:   "Volume (m³)",
+            oilProductionWeight:   "Weight (ton)",
+            oilTransportVolume:    "Volume (m³)",
+            oilTransportWeight:    "Weight (ton)",
+            waterProductionVolume: "Volume (m³)",
+            waterInjectionVolume:  "Volume (m³)"
+        });
+
+        for (const wellSite of wellSites) {
+            const [today, lastReported] = await models.production.daily
+                .find({ wellSite: wellSite.name })
+                .where("date")
+                .lte(date)
+                .sort({ date: -1 })
+                .limit(2)
+                .exec();
+            
+            console.log(today);
+            console.log(lastReported);
+            
+            if (today !== undefined) {
+                const [todaysTanks, lastReportedTanks] = await Promise.all([
+                    models.production.tanks
+                        .findById(today.tanksReportID)
+                        .exec(),
+                    models.production.tanks
+                        .findById(lastReported.tanksReportID)
+                        .exec()
+                ]);
+                
+                const [oilTransports, waterTransports] = await Promise.all([
+                    models.transport.oil
+                        .where("date")
+                        .gt(lastReported.date)
+                        .exec(),
+                    models.transport.water
+                        .where("date")
+                        .gt(lastReported.date)
+                        .exec()
+                ]);
+                
+                console.log(todaysTanks);
+                console.log(lastReportedTanks);
+                console.log(oilTransports);
+                console.log(waterTransports);
+
+                const todaysVolume = {
+                    oil: todaysTanks.tanks.oil
+                        .reduce((acc, tank) => acc + convertVolumeTo15C(tank.volume, tank.temperature), 0),
+                    water: todaysTanks.tanks.water
+                        .reduce((acc, tank) => acc + tank.volume, 0),
+                };
+
+                const todaysWeight = {
+                    oil: todaysTanks.tanks.oil
+                        .reduce((acc, tank) => acc + tank.weight, 0),
+                    water: todaysTanks.tanks.water
+                        .reduce((acc, tank) => acc + tank.weight, 0),
+                };
+
+                const lastReportedVolume = {
+                    oil: lastReportedTanks.tanks.oil
+                        .reduce((acc, tank) => acc + convertVolumeTo15C(tank.volume, tank.temperature), 0),
+                    water: lastReportedTanks.tanks.water
+                        .reduce((acc, tank) => acc + tank.volume, 0),
+                };
+
+                const lastReportedWeight = {
+                    oil: lastReportedTanks.tanks.oil
+                        .reduce((acc, tank) => acc + tank.weight, 0),
+                    water: lastReportedTanks.tanks.water
+                        .reduce((acc, tank) => acc + tank.weight, 0),
+                };
+
+                const transportedVolume = {
+                    oil: oilTransports
+                        .reduce((acc, transport) => acc + convertVolumeTo15C(transport.volume, transport.temperature), 0),
+                    water: waterTransports
+                        .reduce((acc, transport) => acc + transport.volume, 0)
+                };
+
+                const transportedWeight = {
+                    oil: oilTransports
+                        .reduce((acc, transport) => acc + transport.weight, 0),
+                    water: waterTransports
+                        .reduce((acc, transport) => acc + transport.weight, 0)
+                };
+
+                const oilProduced = todaysVolume.oil
+                    - lastReportedVolume.oil
+                    + transportedVolume.oil;
+                
+                const waterProduced = todaysVolume.water
+                    - lastReportedVolume.water
+                    + transportedVolume.water;
+                
+                console.log(oilProduced);
+                console.log(waterProduced);
+
+                worksheet.addRow({
+                    wellSite:              wellSite.name,
+                    oilProductionVolume:   oilProduced,
+                    oilProductionWeight:   0,
+                    oilTransportVolume:    0,
+                    oilTransportWeight:    0,
+                    waterProductionVolume: waterProduced,
+                    waterInjectionVolume:  0
+                });
+            }
+
+            else {
+                worksheet.addRow({
+                    wellSite:              wellSite.name,
+                    oilProductionVolume:   0,
+                    oilProductionWeight:   0,
+                    oilTransportVolume:    0,
+                    oilTransportWeight:    0,
+                    waterProductionVolume: 0,
+                    waterInjectionVolume:  0
+                });
+            }
+        }
+
+        response
+            .status(200)
+            .attachment(`Daily report ${date.toISOString().split("T")[0]}.xlsx`);
+
+        await workbook.xlsx.write(response);
+    }
+
+    catch (error) {
+        console.log(`Error occured in "GET /spreadsheets/daily": ${error}`);
+        response
+            .status(500)
+            .json({ message: "Internal server error" });
+    }
+});
+
+// DEPRECATED
+router.get("/deprecated/daily/:date", async (request, response) => {
     try {
         const date  = utils.parseDate(request.params.date);
         const query = await Promise.all([
